@@ -22,7 +22,21 @@ import (
 
 func main() {
 
-	app := route()
+	context, _ := NewContext()
+
+	// set route
+	app := fiber.New(fiber.Config{})
+
+	// Use recover middleware to prevent crashes
+	app.Use(recover.New())
+	app.Get("/metrics", adaptor.HTTPHandler(promhttp.Handler()))
+
+	// use this route to test
+	NewRoute(app, context, "/", "GET", false, func(c *fiber.Ctx) (int, string, interface{}, collections.Meta, error) {
+		return http.StatusOK, "test", nil, collections.Meta{}, c.JSON(fiber.Map{
+			"message": "running an api at port 8000",
+		})
+	})
 
 	//set channel to notify when app interrupted
 	c := make(chan os.Signal, 1)
@@ -37,46 +51,7 @@ func main() {
 	}
 }
 
-func route() *fiber.App {
-
-	context, _ := NewContext()
-
-	// set route
-	app := fiber.New(fiber.Config{})
-
-	// Use recover middleware to prevent crashes
-	app.Use(recover.New())
-	app.Get("/metrics", adaptor.HTTPHandler(promhttp.Handler()))
-
-	// use this route to test
-	NewRoute(app, context, "/", "GET", false, func(c *fiber.Ctx) (int, string, interface{}, error) {
-		return http.StatusOK, "test", nil, c.JSON(fiber.Map{
-			"message": "running an api at port 8000",
-		})
-	})
-
-	return app
-}
-
-func Response(message string, data interface{}) []byte {
-
-	response := struct {
-		Message string      `json:"message"`
-		Data    interface{} `json:"data"`
-	}{
-		Message: message,
-		Data:    data,
-	}
-
-	value, err := json.Marshal(response)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-
-	return value
-}
-
-func ResponseList(message string, meta collections.Meta, data interface{}) []byte {
+func Response(message string, meta collections.Meta, data interface{}) []byte {
 
 	response := struct {
 		Message string           `json:"message"`
@@ -145,7 +120,7 @@ var (
 	}, []string{"path", "method", "status"})
 )
 
-func NewRoute(app *fiber.App, ctx Context, path string, method string, useAuth bool, handler func(*fiber.Ctx) (int, string, interface{}, error)) {
+func NewRoute(app *fiber.App, ctx Context, path string, method string, useAuth bool, handler func(*fiber.Ctx) (int, string, interface{}, collections.Meta, error)) {
 	if useAuth {
 		app.Add(method, path, ctx.JWT.Authentication(), parseContextWithMatrics(path, method, handler))
 	} else {
@@ -153,19 +128,11 @@ func NewRoute(app *fiber.App, ctx Context, path string, method string, useAuth b
 	}
 }
 
-func NewRouteList(app *fiber.App, ctx Context, path string, method string, useAuth bool, handler func(*fiber.Ctx) (int, string, collections.Meta, interface{}, error)) {
-	if useAuth {
-		app.Add(method, path, ctx.JWT.Authentication(), parseContextListWithMatrics(path, method, handler))
-	} else {
-		app.Add(method, path, parseContextListWithMatrics(path, method, handler))
-	}
-}
-
-func parseContextWithMatrics(path string, method string, f func(*fiber.Ctx) (int, string, interface{}, error)) fiber.Handler {
+func parseContextWithMatrics(path string, method string, f func(*fiber.Ctx) (int, string, interface{}, collections.Meta, error)) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		startTime := time.Now()
 
-		code, message, resp, err := f(c)
+		code, message, resp, meta, err := f(c)
 
 		duration := time.Since(startTime).Seconds()
 
@@ -175,39 +142,13 @@ func parseContextWithMatrics(path string, method string, f func(*fiber.Ctx) (int
 
 		if err != nil {
 			fmt.Println(time.Now().Format("2006-01-02 15:01:02 "), err)
-			errBody := Response(message, nil)
+			errBody := Response(message, meta, nil)
 			c.Set("Content-Length", fmt.Sprintf("%d", len(errBody)))
 			return c.Status(code).Send(errBody)
 		}
 
 		RequestHistogram.WithLabelValues(path, method, statusCode).Observe(duration)
-		successBody := Response(message, resp)
-		c.Set("Content-Length", fmt.Sprintf("%d", len(successBody)))
-		return c.Status(code).Send(successBody)
-	}
-}
-
-func parseContextListWithMatrics(path string, method string, f func(*fiber.Ctx) (int, string, collections.Meta, interface{}, error)) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		startTime := time.Now()
-
-		code, message, meta, resp, err := f(c)
-
-		duration := time.Since(startTime).Seconds()
-
-		statusCode := fmt.Sprintf("%d", c.Response().StatusCode())
-
-		c.Set("Content-Type", "application/json")
-
-		if err != nil {
-			fmt.Println(time.Now().Format("2006-01-02 15:01:02 "), err)
-			errBody := Response(message, nil)
-			c.Set("Content-Length", fmt.Sprintf("%d", len(errBody)))
-			return c.Status(code).Send(errBody)
-		}
-
-		RequestHistogram.WithLabelValues(path, method, statusCode).Observe(duration)
-		successBody := ResponseList(message, meta, resp)
+		successBody := Response(message, meta, resp)
 		c.Set("Content-Length", fmt.Sprintf("%d", len(successBody)))
 		return c.Status(code).Send(successBody)
 	}

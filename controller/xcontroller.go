@@ -8,10 +8,13 @@ import (
 )
 
 type Controller struct {
+	Image Image
 }
 
 func NewController(repo repository.Repository, jwt library.JWT, bcryptSalt int, s3 library.S3) Controller {
-	return Controller{}
+	return Controller{
+		Image: NewImageController(s3),
+	}
 }
 
 func generateUUID() string {
