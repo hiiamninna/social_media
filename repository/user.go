@@ -27,7 +27,7 @@ func (r User) Create(input collections.UserRegisterInput) (int, error) {
 	}
 	defer rows.Close()
 
-	return id, err
+	return id, fmt.Errorf("create : %s", err.Error())
 }
 
 func (c User) GetByEmail(email string) (collections.User, error) {
@@ -37,7 +37,7 @@ func (c User) GetByEmail(email string) (collections.User, error) {
 	sql := `SELECT TEXT(id), name, email, phone, image_url, password FROM users WHERE UPPER(email) = UPPER($1) and deleted_at is null;`
 	err := c.db.QueryRow(sql, email).Scan(&user.Id, &user.Name, &user.Email, &user.Phone, &user.ImageUrl, &user.Password)
 	if err != nil {
-		return user, fmt.Errorf("get by email : %w", err)
+		return user, fmt.Errorf("get by email : %s", err.Error())
 	}
 
 	return user, nil
@@ -50,7 +50,7 @@ func (c User) GetByPhone(phone string) (collections.User, error) {
 	sql := `SELECT TEXT(id), name, email, phone, image_url, password FROM users WHERE UPPER(phone) = UPPER($1) and deleted_at is null;`
 	err := c.db.QueryRow(sql, phone).Scan(&user.Id, &user.Name, &user.Email, &user.Phone, &user.ImageUrl, &user.Password)
 	if err != nil {
-		return user, fmt.Errorf("get by phone : %w", err)
+		return user, fmt.Errorf("get by phone : %s", err.Error())
 	}
 
 	return user, nil
@@ -63,8 +63,19 @@ func (c User) GetByID(id string) (collections.User, error) {
 	sql := `SELECT TEXT(id), name, email, phone, image_url, password FROM users WHERE id = $1 and deleted_at is null;`
 	err := c.db.QueryRow(sql, id).Scan(&user.Id, &user.Name, &user.Email, &user.Phone, &user.ImageUrl, &user.Password)
 	if err != nil {
-		return user, fmt.Errorf("get by id : %w", err)
+		return user, fmt.Errorf("get by id : %s", err.Error())
 	}
 
 	return user, nil
+}
+
+func (c User) UpdateProfile(input collections.UserUpdateInput) error {
+
+	sql := `UPDATE users SET name = $1, image_url = $2, updated_at = current_timestamp WHERE id = $3 AND deleted_at IS NULL;`
+	_, err := c.db.Exec(sql, input.Name, input.ImageUrl, input.UserID)
+	if err != nil {
+		return fmt.Errorf("update user : %s", err.Error())
+	}
+
+	return nil
 }
