@@ -29,6 +29,7 @@ type UserUpdateInput struct {
 }
 
 type FriendInputParam struct {
+	UserID     string
 	Search     string `query:"search"`
 	OnlyFriend bool   `query:"onlyFriend"`
 	OrderBy    string `query:"orderBy"`
