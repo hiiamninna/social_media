@@ -38,13 +38,20 @@ func main() {
 	NewRoute(app, context, "/", "GET", false, func(c *fiber.Ctx) (int, string, interface{}, interface{}, error) {
 		return http.StatusOK, "running an api at port 8080", nil, collections.Meta{}, c.JSON(fiber.Map{})
 	})
-	// actual route
+	// Authentication & Authorization
 	NewRoute(app, context, "/v1/user/register", "POST", false, context.CTL.User.Register)
 	NewRoute(app, context, "/v1/user/login", "POST", false, context.CTL.User.Login)
-
+	// Update Account
 	NewRoute(app, context, "/v1/user", "PATCH", true, context.CTL.User.UpdateProfile)
+	// Link Phone Number / Email
 	NewRoute(app, context, "/v1/user/link/email", "POST", true, context.CTL.User.UpdateLinkEmail)
 	NewRoute(app, context, "/v1/user/link/phone", "POST", true, context.CTL.User.UpdateLinkPhone)
+	// Friends
+	NewRoute(app, context, "/v1/friend", "GET", true, context.CTL.Friend.List)
+	NewRoute(app, context, "/v1/friend", "POST", true, context.CTL.Friend.Create)
+	NewRoute(app, context, "/v1/friend", "DELETE", true, context.CTL.Friend.Delete)
+	// Image upload
+	NewRoute(app, context, "/v1/image", "POST", true, context.CTL.Image.ImageUpload)
 
 	//set channel to notify when app interrupted
 	c := make(chan os.Signal, 1)

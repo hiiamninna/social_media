@@ -5,11 +5,13 @@ import (
 )
 
 type Repository struct {
-	User User
+	User   User
+	Friend Friend
 }
 
 func NewRepository(db *sql.DB) Repository {
 	return Repository{
-		User: NewUserRepository(db),
+		User:   NewUserRepository(db),
+		Friend: Friend(NewFriendRepository(db)),
 	}
 }
