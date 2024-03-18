@@ -147,3 +147,57 @@ func (c User) UpdateProfile(ctx *fiber.Ctx) (int, string, interface{}, interface
 
 	return http.StatusOK, "update profile success", nil, nil, nil
 }
+
+func (c User) UpdateLinkEmail(ctx *fiber.Ctx) (int, string, interface{}, interface{}, error) {
+	raw := ctx.Request().Body()
+	input := collections.UserLinkInput{}
+	err := json.Unmarshal([]byte(raw), &input)
+	if err != nil {
+		return http.StatusBadRequest, "unmarshal input", nil, nil, err
+	}
+
+	input.UserID, _ = library.GetUserID(ctx)
+	if input.UserID == "" {
+		return http.StatusForbidden, "please check your credential", nil, nil, errors.New("not login")
+	}
+
+	// TODO : validation
+	user, _ := c.repo.User.GetByID(input.UserID)
+	if user.Email != "" {
+		return http.StatusBadRequest, "you have an email", nil, nil, errors.New("you have an email")
+	}
+
+	err = c.repo.User.UpdateEmail(input)
+	if err != nil {
+		return http.StatusInternalServerError, "link an email failed", nil, nil, err
+	}
+
+	return http.StatusOK, "link an email success", nil, nil, nil
+}
+
+func (c User) UpdateLinkPhone(ctx *fiber.Ctx) (int, string, interface{}, interface{}, error) {
+	raw := ctx.Request().Body()
+	input := collections.UserLinkInput{}
+	err := json.Unmarshal([]byte(raw), &input)
+	if err != nil {
+		return http.StatusBadRequest, "unmarshal input", nil, nil, err
+	}
+
+	input.UserID, _ = library.GetUserID(ctx)
+	if input.UserID == "" {
+		return http.StatusForbidden, "please check your credential", nil, nil, errors.New("not login")
+	}
+
+	// TODO : validation
+	user, _ := c.repo.User.GetByID(input.UserID)
+	if user.Phone != "" {
+		return http.StatusBadRequest, "you have a phone", nil, nil, errors.New("you have a phone")
+	}
+
+	err = c.repo.User.UpdatePhone(input)
+	if err != nil {
+		return http.StatusInternalServerError, "link an phone failed", nil, nil, err
+	}
+
+	return http.StatusOK, "link an phone success", nil, nil, nil
+}

@@ -79,3 +79,25 @@ func (c User) UpdateProfile(input collections.UserUpdateInput) error {
 
 	return nil
 }
+
+func (c User) UpdateEmail(input collections.UserLinkInput) error {
+
+	sql := `UPDATE users SET email = $1, updated_at = current_timestamp WHERE id = $2 AND deleted_at IS NULL;`
+	_, err := c.db.Exec(sql, input.Email, input.UserID)
+	if err != nil {
+		return fmt.Errorf("update email : %s", err.Error())
+	}
+
+	return nil
+}
+
+func (c User) UpdatePhone(input collections.UserLinkInput) error {
+
+	sql := `UPDATE users SET phone = $1, updated_at = current_timestamp WHERE id = $2 AND deleted_at IS NULL;`
+	_, err := c.db.Exec(sql, input.Phone, input.UserID)
+	if err != nil {
+		return fmt.Errorf("update phone : %s", err.Error())
+	}
+
+	return nil
+}
