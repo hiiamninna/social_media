@@ -22,7 +22,10 @@ import (
 
 func main() {
 
-	context, _ := NewContext()
+	context, err := NewContext()
+	if err != nil {
+		fmt.Println("new context : %w", err.Error())
+	}
 
 	// set route
 	app := fiber.New(fiber.Config{})
@@ -32,11 +35,12 @@ func main() {
 	app.Get("/metrics", adaptor.HTTPHandler(promhttp.Handler()))
 
 	// use this route to test
-	NewRoute(app, context, "/", "GET", false, func(c *fiber.Ctx) (int, string, interface{}, collections.Meta, error) {
-		return http.StatusOK, "test", nil, collections.Meta{}, c.JSON(fiber.Map{
-			"message": "running an api at port 8000",
-		})
+	NewRoute(app, context, "/", "GET", false, func(c *fiber.Ctx) (int, string, interface{}, interface{}, error) {
+		return http.StatusOK, "running an api at port 8080", nil, collections.Meta{}, c.JSON(fiber.Map{})
 	})
+	// actual route
+	NewRoute(app, context, "/v1/user/register", "POST", false, context.CTL.User.Register)
+	NewRoute(app, context, "/v1/user/login", "POST", false, context.CTL.User.Login)
 
 	//set channel to notify when app interrupted
 	c := make(chan os.Signal, 1)
@@ -46,17 +50,17 @@ func main() {
 		fmt.Println("Gracefully shutting down...")
 		_ = app.Shutdown()
 	}()
-	if err := app.Listen(":8000"); err != nil {
+	if err := app.Listen(":8080"); err != nil {
 		fmt.Println("error on http listen : %w", err)
 	}
 }
 
-func Response(message string, meta collections.Meta, data interface{}) []byte {
+func Response(message string, meta interface{}, data interface{}) []byte {
 
 	response := struct {
-		Message string           `json:"message"`
-		Data    interface{}      `json:"data"`
-		Meta    collections.Meta `json:"meta"`
+		Message string      `json:"message"`
+		Data    interface{} `json:"data"`
+		Meta    interface{} `json:"meta"`
 	}{
 		Message: message,
 		Data:    data,
@@ -120,7 +124,7 @@ var (
 	}, []string{"path", "method", "status"})
 )
 
-func NewRoute(app *fiber.App, ctx Context, path string, method string, useAuth bool, handler func(*fiber.Ctx) (int, string, interface{}, collections.Meta, error)) {
+func NewRoute(app *fiber.App, ctx Context, path string, method string, useAuth bool, handler func(*fiber.Ctx) (int, string, interface{}, interface{}, error)) {
 	if useAuth {
 		app.Add(method, path, ctx.JWT.Authentication(), parseContextWithMatrics(path, method, handler))
 	} else {
@@ -128,7 +132,7 @@ func NewRoute(app *fiber.App, ctx Context, path string, method string, useAuth b
 	}
 }
 
-func parseContextWithMatrics(path string, method string, f func(*fiber.Ctx) (int, string, interface{}, collections.Meta, error)) fiber.Handler {
+func parseContextWithMatrics(path string, method string, f func(*fiber.Ctx) (int, string, interface{}, interface{}, error)) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		startTime := time.Now()
 
@@ -148,6 +152,24 @@ func parseContextWithMatrics(path string, method string, f func(*fiber.Ctx) (int
 		}
 
 		RequestHistogram.WithLabelValues(path, method, statusCode).Observe(duration)
+		successBody := Response(message, meta, resp)
+		c.Set("Content-Length", fmt.Sprintf("%d", len(successBody)))
+		return c.Status(code).Send(successBody)
+	}
+}
+
+func ParseContext(f func(*fiber.Ctx) (int, string, interface{}, interface{}, error)) func(*fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		code, message, resp, meta, err := f(c)
+		c.Set("Content-Type", "application/json")
+
+		if err != nil {
+			fmt.Println(time.Now().Format("2006-01-02 15:01:02 "), err)
+			errBody := Response(message, meta, nil)
+			c.Set("Content-Length", fmt.Sprintf("%d", len(errBody)))
+			return c.Status(code).Send(errBody)
+		}
+
 		successBody := Response(message, meta, resp)
 		c.Set("Content-Length", fmt.Sprintf("%d", len(successBody)))
 		return c.Status(code).Send(successBody)

@@ -16,8 +16,7 @@ type JWT struct {
 }
 
 type customClaims struct {
-	ID   string
-	Name string
+	ID string
 	jwt.StandardClaims
 }
 
@@ -27,12 +26,11 @@ func NewJWT(secretKey string) JWT {
 	}
 }
 
-func (c JWT) CreateToken(id string, name string) (string, error) {
+func (c JWT) CreateToken(id string) (string, error) {
 
 	expiredTime := time.Now().Add(24 * time.Hour)
 	claims := &customClaims{
-		ID:   id,
-		Name: name,
+		ID: id,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expiredTime.Unix(),
 		},
@@ -46,7 +44,6 @@ func (c JWT) CreateToken(id string, name string) (string, error) {
 	return token, nil
 }
 
-// TODO : 401 vs 403
 func (c JWT) Authentication() fiber.Handler {
 	return func(context *fiber.Ctx) error {
 		errHandle := func(err error, message string) error {
