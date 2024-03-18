@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"social_media/collections"
@@ -122,5 +123,27 @@ func (c User) Login(ctx *fiber.Ctx) (int, string, interface{}, interface{}, erro
 	}
 
 	return http.StatusOK, "User logged successfully", resp, nil, err
+}
 
+func (c User) UpdateProfile(ctx *fiber.Ctx) (int, string, interface{}, interface{}, error) {
+	raw := ctx.Request().Body()
+	input := collections.UserUpdateInput{}
+	err := json.Unmarshal([]byte(raw), &input)
+	if err != nil {
+		return http.StatusBadRequest, "unmarshal input", nil, nil, err
+	}
+
+	input.UserID, _ = library.GetUserID(ctx)
+	if input.UserID == "" {
+		return http.StatusForbidden, "please check your credential", nil, nil, errors.New("not login")
+	}
+
+	// TODO : validation
+
+	err = c.repo.User.UpdateProfile(input)
+	if err != nil {
+		return http.StatusInternalServerError, "update profile failed", nil, nil, err
+	}
+
+	return http.StatusOK, "update profile success", nil, nil, nil
 }

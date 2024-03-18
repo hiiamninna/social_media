@@ -42,6 +42,8 @@ func main() {
 	NewRoute(app, context, "/v1/user/register", "POST", false, context.CTL.User.Register)
 	NewRoute(app, context, "/v1/user/login", "POST", false, context.CTL.User.Login)
 
+	NewRoute(app, context, "/v1/user", "PATCH", true, context.CTL.User.UpdateProfile)
+
 	//set channel to notify when app interrupted
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
