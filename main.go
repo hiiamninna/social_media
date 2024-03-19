@@ -54,6 +54,7 @@ func main() {
 	NewRoute(app, context, "/v1/image", "POST", true, context.CTL.Image.ImageUpload)
 	// Post
 	NewRoute(app, context, "/v1/post", "POST", true, context.CTL.Post.Create)
+	NewRoute(app, context, "/v1/post", "GET", true, context.CTL.Post.List)
 	// Comment
 	NewRoute(app, context, "/v1/post/comment", "POST", true, context.CTL.Comment.Create)
 

@@ -50,6 +50,7 @@ type PostInput struct {
 }
 
 type PostInputParam struct {
+	UserID string
 	Tags   []string `query:"searchTag"`
 	Search string   `query:"search"`
 	Limit  int      `query:"limit"`

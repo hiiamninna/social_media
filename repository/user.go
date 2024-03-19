@@ -101,3 +101,27 @@ func (r User) UpdatePhone(input collections.UserLinkInput) error {
 
 	return nil
 }
+
+func (r User) List() ([]collections.UserAsFriend, error) {
+
+	users := []collections.UserAsFriend{}
+	sql := `SELECT id, name, image_url, 1, created_at FROM users WHERE deleted_at IS NULL;`
+	rows, err := r.db.Query(sql)
+	if err != nil {
+		return users, fmt.Errorf("select user list : %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		u := collections.UserAsFriend{}
+
+		err := rows.Scan(&u.UserId, &u.Name, &u.ImageUrl, &u.FriendCount, &u.CreatedAt)
+		if err != nil {
+			return users, fmt.Errorf("rows scan : %w", err)
+		}
+
+		users = append(users, u)
+	}
+
+	return users, nil
+}
