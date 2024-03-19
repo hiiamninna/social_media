@@ -25,3 +25,27 @@ func (r Comment) Create(input collections.CommentInput) error {
 
 	return nil
 }
+
+func (r Comment) List() ([]collections.Comment, error) {
+
+	comments := []collections.Comment{}
+	sql := `SELECT c.comment, u.id, u.name, u.image_url, 1, c.created_at, c.post_id FROM comments c LEFT JOIN users u ON c.user_id = u.id WHERE c.deleted_at IS NULL and u.deleted_at IS NULL;`
+	rows, err := r.db.Query(sql)
+	if err != nil {
+		return comments, fmt.Errorf("select comment list : %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		c := collections.Comment{}
+
+		err := rows.Scan(&c.Comment, &c.Creator.UserId, &c.Creator.Name, &c.Creator.ImageUrl, &c.Creator.FriendCount, &c.Creator.CreatedAt, &c.PostID)
+		if err != nil {
+			return comments, fmt.Errorf("rows scan : %w", err)
+		}
+
+		comments = append(comments, c)
+	}
+
+	return comments, nil
+}

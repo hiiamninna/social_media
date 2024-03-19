@@ -27,3 +27,27 @@ func (r Post) Create(input collections.PostInput) error {
 
 	return nil
 }
+
+func (r Post) List() ([]collections.Post, error) {
+
+	posts := []collections.Post{}
+	sql := `SELECT id, post, tags, created_at, user_id FROM posts WHERE deleted_at IS NULL;`
+	rows, err := r.db.Query(sql)
+	if err != nil {
+		return posts, fmt.Errorf("select post list : %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		p := collections.Post{}
+
+		err := rows.Scan(&p.PostID, &p.PostData.PostInHtml, pq.Array(&p.PostData.Tags), &p.PostData.CreatedAt, &p.UserID)
+		if err != nil {
+			return posts, fmt.Errorf("rows scan : %w", err)
+		}
+
+		posts = append(posts, p)
+	}
+
+	return posts, nil
+}
