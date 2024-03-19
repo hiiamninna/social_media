@@ -10,8 +10,8 @@ type Friend struct {
 	db *sql.DB
 }
 
-func NewFriendRepository(db *sql.DB) User {
-	return User{
+func NewFriendRepository(db *sql.DB) Friend {
+	return Friend{
 		db: db,
 	}
 }
