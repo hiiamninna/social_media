@@ -52,6 +52,10 @@ func main() {
 	NewRoute(app, context, "/v1/friend", "DELETE", true, context.CTL.Friend.Delete)
 	// Image upload
 	NewRoute(app, context, "/v1/image", "POST", true, context.CTL.Image.ImageUpload)
+	// Post
+	NewRoute(app, context, "/v1/post", "POST", true, context.CTL.Post.Create)
+	// Comment
+	NewRoute(app, context, "/v1/post/comment", "POST", true, context.CTL.Comment.Create)
 
 	//set channel to notify when app interrupted
 	c := make(chan os.Signal, 1)
