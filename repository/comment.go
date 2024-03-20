@@ -26,11 +26,29 @@ func (r Comment) Create(input collections.CommentInput) error {
 	return nil
 }
 
-func (r Comment) List() ([]collections.Comment, error) {
+func (r Comment) List(postIds []int) ([]collections.Comment, error) {
 
 	comments := []collections.Comment{}
-	sql := `SELECT c.comment, u.id, u.name, u.image_url, 1, c.created_at, c.post_id FROM comments c LEFT JOIN users u ON c.user_id = u.id WHERE c.deleted_at IS NULL and u.deleted_at IS NULL;`
-	rows, err := r.db.Query(sql)
+	sql := `SELECT c.comment, u.id, u.name, u.image_url, 1, c.created_at, c.post_id FROM comments c LEFT JOIN users u ON c.user_id = u.id WHERE c.deleted_at IS NULL and u.deleted_at IS NULL 
+	`
+
+	var values []interface{}
+	if len(postIds) > 0 {
+		sql += "AND c.post_id in("
+		for i, id := range postIds {
+			// and c.post_id in ([post_ids])
+			sql += fmt.Sprintf("$%d", (i + 1))
+			if i+1 != len(postIds) {
+				sql += ","
+			}
+			values = append(values, id)
+		}
+		sql += ")"
+	}
+
+	sql += ";"
+
+	rows, err := r.db.Query(sql, values...)
 	if err != nil {
 		return comments, fmt.Errorf("select comment list : %w", err)
 	}

@@ -7,6 +7,7 @@ import (
 	"social_media/collections"
 	"social_media/library"
 	"social_media/repository"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -47,25 +48,26 @@ func (c Post) Create(ctx *fiber.Ctx) (int, string, interface{}, interface{}, err
 
 func (c Post) List(ctx *fiber.Ctx) (int, string, interface{}, interface{}, error) {
 
-	raw := ctx.Request().Body()
 	input := collections.PostInputParam{}
-	err := json.Unmarshal([]byte(raw), &input)
-	if err != nil {
-		return http.StatusBadRequest, UNMARSHAL_INPUT, nil, nil, err
+	if err := ctx.QueryParser(&input); err != nil {
+		return http.StatusInternalServerError, "list post error", nil, nil, err
 	}
 
-	// TODO : query params
+	if input.Limit == 0 {
+		input.Limit = 5
+		input.Offset = 0
+	}
 
 	input.UserID = library.GetUserID(ctx)
 
-	result := []collections.PostList{}
+	result := []collections.Post{}
 
-	posts, err := c.repo.Post.List()
+	posts, ids, meta, err := c.repo.Post.List(input)
 	if err != nil {
 		return http.StatusInternalServerError, "post list error", nil, nil, err
 	}
 
-	comments, err := c.repo.Comment.List()
+	comments, err := c.repo.Comment.List(ids)
 	if err != nil {
 		return http.StatusInternalServerError, "comment list error", nil, nil, err
 	}
@@ -76,14 +78,23 @@ func (c Post) List(ctx *fiber.Ctx) (int, string, interface{}, interface{}, error
 	}
 
 	for _, p := range posts {
-		result = append(result, collections.PostList{
-			Posts:    p,
+		result = append(result, collections.Post{
+			PostID: p.PostID,
+			PostData: struct {
+				PostInHtml string    "json:\"postInHtml\""
+				Tags       []string  "json:\"tags\""
+				CreatedAt  time.Time "json:\"createdAt\""
+			}{
+				PostInHtml: p.PostData.PostInHtml,
+				Tags:       p.PostData.Tags,
+				CreatedAt:  p.PostData.CreatedAt,
+			},
 			Comments: getComments(p.PostID, comments),
 			Creator:  getCreator(p.UserID, creator),
 		})
 	}
 
-	return http.StatusOK, "ok", result, nil, nil
+	return http.StatusOK, "ok", result, meta, nil
 
 }
 

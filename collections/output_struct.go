@@ -53,20 +53,18 @@ type Meta struct {
 	Offset int `json:"offset"`
 	Total  int `json:"total"`
 }
-type PostList struct {
-	Posts    Post         `json:"posts"`
-	Comments []Comment    `json:"comments"`
-	Creator  UserAsFriend `json:"creator"`
-}
 
 type Post struct {
 	UserID   string `json:"-"`
+	ID       int    `json:"-"`
 	PostID   string `json:"postId"`
 	PostData struct {
 		PostInHtml string    `json:"postInHtml"`
 		Tags       []string  `json:"tags"`
 		CreatedAt  time.Time `json:"createdAt"`
 	} `json:"post"`
+	Comments []Comment    `json:"comments"`
+	Creator  UserAsFriend `json:"creator"`
 }
 
 type Comment struct {
