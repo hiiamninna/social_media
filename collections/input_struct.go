@@ -49,8 +49,8 @@ type FriendInput struct {
 
 type PostInput struct {
 	UserID string
-	Post   string   `json:"postInHtml"`
-	Tags   []string `json:"tags"`
+	Post   string   `json:"postInHtml" validate:"required,min=2,max=500"`
+	Tags   []string `json:"tags" validate:"required"`
 }
 
 type PostInputParam struct {
@@ -63,6 +63,6 @@ type PostInputParam struct {
 
 type CommentInput struct {
 	UserID  string
-	PostID  string `json:"postId"`
-	Comment string `json:"comment"`
+	PostID  string `json:"postId" validate:"required"`
+	Comment string `json:"comment" validate:"required,min=2,max=500"`
 }

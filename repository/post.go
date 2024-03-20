@@ -51,3 +51,23 @@ func (r Post) List() ([]collections.Post, error) {
 
 	return posts, nil
 }
+
+func (r Post) GetById(id string) (collections.Post, error) {
+
+	post := collections.Post{}
+	sql := `SELECT id, post, tags, created_at, user_id FROM posts WHERE deleted_at IS NULL;`
+	rows, err := r.db.Query(sql)
+	if err != nil {
+		return post, fmt.Errorf("get post by id : %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		err := rows.Scan(&post.PostID, &post.PostData.PostInHtml, pq.Array(&post.PostData.Tags), &post.PostData.CreatedAt, &post.UserID)
+		if err != nil {
+			return post, fmt.Errorf("rows scan : %w", err)
+		}
+	}
+
+	return post, nil
+}
