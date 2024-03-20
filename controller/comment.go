@@ -27,12 +27,32 @@ func (c Comment) Create(ctx *fiber.Ctx) (int, string, interface{}, interface{}, 
 	input := collections.CommentInput{}
 	err := json.Unmarshal([]byte(raw), &input)
 	if err != nil {
-		return http.StatusBadRequest, "unmarshal input", nil, nil, err
+		return http.StatusBadRequest, UNMARSHAL_INPUT, nil, nil, err
 	}
 
 	input.UserID = library.GetUserID(ctx)
 
-	// TODO : validation
+	message, err := library.ValidateInput(input)
+	if err != nil {
+		return http.StatusBadRequest, message, nil, nil, err
+	}
+
+	post, err := c.repo.Post.GetById(input.PostID)
+	if err != nil {
+		return http.StatusNotFound, "post not found", nil, nil, err
+	}
+
+	friend, err := c.repo.Friend.GetByUser(collections.FriendInput{
+		UserID:   input.UserID,
+		FriendID: post.UserID,
+	})
+	if err != nil {
+		return http.StatusBadRequest, "can not comment, not your friends", nil, nil, err
+	}
+
+	if friend.Id == 0 {
+		return http.StatusBadRequest, "can not comment, not your friends", nil, nil, errors.New("not friend")
+	}
 
 	err = c.repo.Comment.Create(input)
 	if err != nil {

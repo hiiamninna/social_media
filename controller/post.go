@@ -27,12 +27,15 @@ func (c Post) Create(ctx *fiber.Ctx) (int, string, interface{}, interface{}, err
 	input := collections.PostInput{}
 	err := json.Unmarshal([]byte(raw), &input)
 	if err != nil {
-		return http.StatusBadRequest, "unmarshal input", nil, nil, err
+		return http.StatusBadRequest, UNMARSHAL_INPUT, nil, nil, err
 	}
 
 	input.UserID = library.GetUserID(ctx)
 
-	// TODO : validation
+	message, err := library.ValidateInput(input)
+	if err != nil {
+		return http.StatusBadRequest, message, nil, nil, err
+	}
 
 	err = c.repo.Post.Create(input)
 	if err != nil {
@@ -48,7 +51,7 @@ func (c Post) List(ctx *fiber.Ctx) (int, string, interface{}, interface{}, error
 	input := collections.PostInputParam{}
 	err := json.Unmarshal([]byte(raw), &input)
 	if err != nil {
-		return http.StatusBadRequest, "unmarshal input", nil, nil, err
+		return http.StatusBadRequest, UNMARSHAL_INPUT, nil, nil, err
 	}
 
 	// TODO : query params
