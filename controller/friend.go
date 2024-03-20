@@ -30,10 +30,7 @@ func (c Friend) List(ctx *fiber.Ctx) (int, string, interface{}, interface{}, err
 		return http.StatusBadRequest, "unmarshal input", nil, nil, err
 	}
 
-	input.UserID, _ = library.GetUserID(ctx)
-	if input.UserID == "" {
-		return http.StatusForbidden, "please check your credential", nil, nil, errors.New("not login")
-	}
+	input.UserID = library.GetUserID(ctx)
 
 	friends, err := c.repo.Friend.List(input)
 	if err != nil {
@@ -54,10 +51,7 @@ func (c Friend) Create(ctx *fiber.Ctx) (int, string, interface{}, interface{}, e
 		return http.StatusBadRequest, "unmarshal input", nil, nil, err
 	}
 
-	input.UserID, _ = library.GetUserID(ctx)
-	if input.UserID == "" {
-		return http.StatusForbidden, "please check your credential", nil, nil, errors.New("not login")
-	}
+	input.UserID = library.GetUserID(ctx)
 
 	if input.FriendID == input.UserID {
 		return http.StatusBadRequest, "can not add your own self", nil, nil, errors.New("can not add your own self")
@@ -90,10 +84,7 @@ func (c Friend) Delete(ctx *fiber.Ctx) (int, string, interface{}, interface{}, e
 		return http.StatusBadRequest, "unmarshal input", nil, nil, err
 	}
 
-	input.UserID, _ = library.GetUserID(ctx)
-	if input.UserID == "" {
-		return http.StatusForbidden, "please check your credential", nil, nil, errors.New("not login")
-	}
+	input.UserID = library.GetUserID(ctx)
 
 	newFriend, _ := c.repo.User.GetByID(input.FriendID)
 	if newFriend.Id == "" {

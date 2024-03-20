@@ -30,10 +30,7 @@ func (c Comment) Create(ctx *fiber.Ctx) (int, string, interface{}, interface{}, 
 		return http.StatusBadRequest, "unmarshal input", nil, nil, err
 	}
 
-	input.UserID, _ = library.GetUserID(ctx)
-	if input.UserID == "" {
-		return http.StatusForbidden, "please check your credential", nil, nil, errors.New("not login")
-	}
+	input.UserID = library.GetUserID(ctx)
 
 	// TODO : validation
 

@@ -3,7 +3,6 @@ package controller
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"social_media/collections"
 	"social_media/library"
@@ -34,10 +33,39 @@ func (c User) Register(ctx *fiber.Ctx) (int, string, interface{}, interface{}, e
 	input := collections.UserRegisterInput{}
 	err := json.Unmarshal([]byte(raw), &input)
 	if err != nil {
-		return http.StatusBadRequest, "unmarshal input", nil, nil, err
+		return http.StatusBadRequest, UNMARSHAL_INPUT, nil, nil, err
 	}
 
-	// TODO : validation
+	message, err := library.ValidateInput(input)
+	if err != nil {
+		return http.StatusBadRequest, message, nil, nil, err
+	}
+
+	if input.CredType == "phone" {
+		isPhone := library.IsPhone(input.CredValue)
+		if !isPhone {
+			return http.StatusBadRequest, "not valid phone number", nil, nil, err
+		}
+
+		exist, _ := c.repo.User.GetByPhone(input.CredValue)
+		if exist.Id != "" {
+			return http.StatusConflict, "phone number registered", nil, nil, err
+		}
+
+		input.Phone = input.CredValue
+	} else {
+		isEmail := library.IsEmail(input.CredValue)
+		if !isEmail {
+			return http.StatusBadRequest, "not valid email", nil, nil, err
+		}
+
+		exist, _ := c.repo.User.GetByEmail(input.CredValue)
+		if exist.Id != "" {
+			return http.StatusConflict, "email registered", nil, nil, err
+		}
+
+		input.Email = input.CredValue
+	}
 
 	generated, err := bcrypt.GenerateFromPassword([]byte(input.Password), c.bcryptSalt)
 	if err != nil {
@@ -45,14 +73,6 @@ func (c User) Register(ctx *fiber.Ctx) (int, string, interface{}, interface{}, e
 	}
 
 	input.Password = string(generated)
-
-	if input.CredType == "phone" {
-		input.Phone = input.CredValue
-	} else if input.CredType == "email" {
-		input.Email = input.CredValue
-	} else {
-		// TODO : return error enum or get into validation
-	}
 
 	id, err := c.repo.User.Create(input)
 	if err != nil {
@@ -85,24 +105,37 @@ func (c User) Login(ctx *fiber.Ctx) (int, string, interface{}, interface{}, erro
 	input := collections.UserLoginInput{}
 	err := json.Unmarshal([]byte(raw), &input)
 	if err != nil {
-		return http.StatusBadRequest, "unmarshal input", nil, nil, err
+		return http.StatusBadRequest, UNMARSHAL_INPUT, nil, nil, err
 	}
 
-	// TODO : validation
+	message, err := library.ValidateInput(input)
+	if err != nil {
+		return http.StatusBadRequest, message, nil, nil, err
+	}
 
 	user := collections.User{}
 	if input.CredType == "phone" {
+
+		isPhone := library.IsPhone(input.CredValue)
+		if !isPhone {
+			return http.StatusBadRequest, "not valid phone number", nil, nil, err
+		}
+
 		user, err = c.repo.User.GetByPhone(input.CredValue)
 		if err != nil {
 			return http.StatusNotFound, "User not found", nil, nil, err
 		}
-	} else if input.CredType == "email" {
+	} else {
+
+		isEmail := library.IsEmail(input.CredValue)
+		if !isEmail {
+			return http.StatusBadRequest, "not valid email", nil, nil, err
+		}
+
 		user, err = c.repo.User.GetByEmail(input.CredValue)
 		if err != nil {
 			return http.StatusNotFound, "User not found", nil, nil, err
 		}
-	} else {
-		// TODO : return error enum or get into validation
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password))
@@ -112,7 +145,7 @@ func (c User) Login(ctx *fiber.Ctx) (int, string, interface{}, interface{}, erro
 
 	token, err := c.jwt.CreateToken(user.Id)
 	if err != nil {
-		fmt.Println(err)
+		return http.StatusInternalServerError, "User login failed", nil, nil, err
 	}
 
 	resp := collections.UserLogin{
@@ -130,15 +163,20 @@ func (c User) UpdateProfile(ctx *fiber.Ctx) (int, string, interface{}, interface
 	input := collections.UserUpdateInput{}
 	err := json.Unmarshal([]byte(raw), &input)
 	if err != nil {
-		return http.StatusBadRequest, "unmarshal input", nil, nil, err
+		return http.StatusBadRequest, UNMARSHAL_INPUT, nil, nil, err
 	}
 
-	input.UserID, _ = library.GetUserID(ctx)
-	if input.UserID == "" {
-		return http.StatusForbidden, "please check your credential", nil, nil, errors.New("not login")
+	input.UserID = library.GetUserID(ctx)
+
+	message, err := library.ValidateInput(input)
+	if err != nil {
+		return http.StatusBadRequest, message, nil, nil, err
 	}
 
-	// TODO : validation
+	isImage := library.IsImageUrl(input.ImageUrl)
+	if !isImage {
+		return http.StatusBadRequest, "not image url", nil, nil, errors.New("not image url")
+	}
 
 	err = c.repo.User.UpdateProfile(input)
 	if err != nil {
@@ -150,21 +188,27 @@ func (c User) UpdateProfile(ctx *fiber.Ctx) (int, string, interface{}, interface
 
 func (c User) UpdateLinkEmail(ctx *fiber.Ctx) (int, string, interface{}, interface{}, error) {
 	raw := ctx.Request().Body()
-	input := collections.UserLinkInput{}
+	input := collections.UserLinkEmail{}
 	err := json.Unmarshal([]byte(raw), &input)
 	if err != nil {
-		return http.StatusBadRequest, "unmarshal input", nil, nil, err
+		return http.StatusBadRequest, UNMARSHAL_INPUT, nil, nil, err
 	}
 
-	input.UserID, _ = library.GetUserID(ctx)
-	if input.UserID == "" {
-		return http.StatusForbidden, "please check your credential", nil, nil, errors.New("not login")
-	}
+	input.UserID = library.GetUserID(ctx)
 
-	// TODO : validation
 	user, _ := c.repo.User.GetByID(input.UserID)
 	if user.Email != "" {
 		return http.StatusBadRequest, "you have an email", nil, nil, errors.New("you have an email")
+	}
+
+	message, err := library.ValidateInput(input.Email)
+	if err != nil {
+		return http.StatusBadRequest, message, nil, nil, err
+	}
+
+	exist, _ := c.repo.User.GetByEmail(input.Email)
+	if exist.Id != "" {
+		return http.StatusConflict, "email registered", nil, nil, errors.New("email registered")
 	}
 
 	err = c.repo.User.UpdateEmail(input)
@@ -177,21 +221,27 @@ func (c User) UpdateLinkEmail(ctx *fiber.Ctx) (int, string, interface{}, interfa
 
 func (c User) UpdateLinkPhone(ctx *fiber.Ctx) (int, string, interface{}, interface{}, error) {
 	raw := ctx.Request().Body()
-	input := collections.UserLinkInput{}
+	input := collections.UserLinkPhone{}
 	err := json.Unmarshal([]byte(raw), &input)
 	if err != nil {
-		return http.StatusBadRequest, "unmarshal input", nil, nil, err
+		return http.StatusBadRequest, UNMARSHAL_INPUT, nil, nil, err
 	}
 
-	input.UserID, _ = library.GetUserID(ctx)
-	if input.UserID == "" {
-		return http.StatusForbidden, "please check your credential", nil, nil, errors.New("not login")
-	}
+	input.UserID = library.GetUserID(ctx)
 
-	// TODO : validation
 	user, _ := c.repo.User.GetByID(input.UserID)
 	if user.Phone != "" {
 		return http.StatusBadRequest, "you have a phone", nil, nil, errors.New("you have a phone")
+	}
+
+	message, err := library.ValidateInput(input.Phone)
+	if err != nil {
+		return http.StatusBadRequest, message, nil, nil, err
+	}
+
+	exist, _ := c.repo.User.GetByPhone(input.Phone)
+	if exist.Id != "" {
+		return http.StatusConflict, "phone registered", nil, nil, errors.New("phone registered")
 	}
 
 	err = c.repo.User.UpdatePhone(input)
@@ -201,3 +251,6 @@ func (c User) UpdateLinkPhone(ctx *fiber.Ctx) (int, string, interface{}, interfa
 
 	return http.StatusOK, "link an phone success", nil, nil, nil
 }
+
+// TODO : validate email => make a simpler function
+// TODO : validate phone => make a simpler function

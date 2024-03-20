@@ -28,3 +28,7 @@ func NewController(repo repository.Repository, jwt library.JWT, bcryptSalt int, 
 func generateUUID() string {
 	return uuid.NewString()
 }
+
+const (
+	UNMARSHAL_INPUT = "unmarshal input"
+)

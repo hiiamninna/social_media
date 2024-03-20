@@ -30,10 +30,7 @@ func (c Post) Create(ctx *fiber.Ctx) (int, string, interface{}, interface{}, err
 		return http.StatusBadRequest, "unmarshal input", nil, nil, err
 	}
 
-	input.UserID, _ = library.GetUserID(ctx)
-	if input.UserID == "" {
-		return http.StatusForbidden, "please check your credential", nil, nil, errors.New("not login")
-	}
+	input.UserID = library.GetUserID(ctx)
 
 	// TODO : validation
 
@@ -56,10 +53,7 @@ func (c Post) List(ctx *fiber.Ctx) (int, string, interface{}, interface{}, error
 
 	// TODO : query params
 
-	input.UserID, _ = library.GetUserID(ctx)
-	if input.UserID == "" {
-		return http.StatusForbidden, "please check your credential", nil, nil, errors.New("not login")
-	}
+	input.UserID = library.GetUserID(ctx)
 
 	result := []collections.PostList{}
 

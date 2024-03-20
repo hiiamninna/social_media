@@ -28,7 +28,7 @@ func NewJWT(secretKey string) JWT {
 
 func (c JWT) CreateToken(id string) (string, error) {
 
-	expiredTime := time.Now().Add(24 * time.Hour)
+	expiredTime := time.Now().Add(8 * time.Hour)
 	claims := &customClaims{
 		ID: id,
 		StandardClaims: jwt.StandardClaims{

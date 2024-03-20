@@ -50,15 +50,16 @@ func GetAllSession(context *fiber.Ctx) (map[string]interface{}, error) {
 	return sessionsMap, nil
 }
 
-func GetUserID(context *fiber.Ctx) (string, error) {
+func GetUserID(context *fiber.Ctx) string {
 	maps, err := GetAllSession(context)
 	if err != nil {
-		return "", fmt.Errorf("get all session : %w", err)
+		fmt.Println("get all session : %w", err)
+		return ""
 	}
 	if maps != nil {
-		return maps[`user_id`].(string), nil
+		return maps[`user_id`].(string)
 	}
-	return "", nil
+	return ""
 }
 
 func DeleteSession(context *fiber.Ctx) (string, error) {

@@ -2,239 +2,77 @@ package library
 
 import (
 	"fmt"
-	"net/url"
-	"reflect"
-	"strconv"
 	"strings"
+
+	validation "github.com/go-playground/validator/v10"
 )
 
-const (
-	New    string = "new"
-	Second string = "second"
-)
+var validationError = validation.New()
 
-func Validate(item interface{}) error {
-	val := reflect.ValueOf(item)
-	for i := 0; i < val.NumField(); i++ {
-		var err error
-		fieldType := val.Type().Field(i)
-		rule := fieldType.Tag.Get("validate")
-		rules := strings.Split(rule, ";")
-		//no rules defined, then exit
-		if len(rules) == 0 {
-			continue
-		}
+// Using validator
+func ValidateInput(data interface{}) (string, error) {
 
-		field := val.Field(i)
-		value := field.Interface()
+	// create new validationa and check the struct
 
-		//get name of variable
-		name := fieldType.Tag.Get("json")
-		//get value of variable
-		//check type of validation
-		switch field.Type().Kind() {
-		case reflect.String:
-			err = validateString(rules, name, value)
-		case reflect.Int:
-			err = validateInt(rules, name, value)
-		}
+	err := validationError.Struct(data)
 
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func validateString(rules []string, name string, v interface{}) error {
-	value := v.(string)
-	for _, rule := range rules {
-		if err := strRequired(rule, name, value); err != nil {
-			return err
-		}
-		if err := strMinLength(rule, name, value); err != nil {
-			return err
-		}
-		if err := strMaxLength(rule, name, value); err != nil {
-			return err
-		}
-		if err := strIsValidUrl(rule, name, value); err != nil {
-			return err
-		}
-		if err := strCheckEnum(rule, name, value); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func strRequired(rule, name, value string) error {
-	if !strings.Contains(rule, "required") {
-		return nil
-	}
-	if value == "" {
-		return fmt.Errorf("field %s must be filled", name)
-	}
-
-	return nil
-}
-
-func strIsValidUrl(rule, name, value string) error {
-	if !strings.Contains(rule, "url") {
-		return nil
-	}
-
-	_, err := url.Parse(value)
 	if err != nil {
-		return fmt.Errorf("fiels %s must be a valid url", name)
-	}
-
-	return nil
-}
-
-func strCheckEnum(rule, name, value string) error {
-	if !strings.Contains(rule, "enum") {
-		return nil
-	}
-
-	r := strings.Split(rule, ":")
-	if len(r) < 2 {
-		return fmt.Errorf("enum invalid rule definition, name : " + name)
-	}
-
-	enumType := strings.TrimSpace(r[1])
-
-	switch enumType {
-	case "condition":
-		checkEnumCondition(name, value)
-	default:
-		return fmt.Errorf("enum invalid rule definition, name : " + name)
-	}
-
-	return nil
-}
-
-func checkEnumCondition(name, value string) error {
-	switch value {
-	case New, Second:
-		return nil
-	default:
-		return fmt.Errorf("invalid value for field %s", name)
-	}
-}
-
-func strMinLength(rule, name, value string) error {
-	if !strings.Contains(rule, "min") {
-		return nil
-	}
-
-	r := strings.Split(rule, ":")
-	if len(r) < 2 {
-		return fmt.Errorf("min-length invalid rule definition, name : " + name)
-	}
-
-	limit, err := strconv.Atoi(strings.TrimSpace(r[1]))
-	if err != nil {
-		return fmt.Errorf("invalid rule:(%s) %w", name, err)
-	}
-
-	if len(value) < limit {
-		return fmt.Errorf("field %s must have at least %d character(s)", name, limit)
-	}
-
-	return nil
-}
-
-func strMaxLength(rule, name, value string) error {
-	if !strings.Contains(rule, "max") {
-		return nil
-	}
-
-	r := strings.Split(rule, ":")
-	if len(r) < 2 {
-		return fmt.Errorf("max-length invalid rule definition, name : " + name)
-	}
-
-	limit, err := strconv.Atoi(strings.TrimSpace(r[1]))
-	if err != nil {
-		return fmt.Errorf("invalid rule:(%s) %w", name, err)
-	}
-
-	if len(value) > limit {
-		return fmt.Errorf("total characters for field %s must be less or same than %d character(s)", name, limit)
-	}
-
-	return nil
-}
-
-func validateInt(rules []string, name string, v interface{}) error {
-	value, _ := v.(int)
-	for _, rule := range rules {
-		if err := intRequired(rule, name, value); err != nil {
-			return err
+		var errors []string
+		// this check is only needed when your code could produce
+		// an invalid value for validation such as interface with nil
+		// value most including myself do not usually have code like this.
+		if _, ok := err.(*validation.InvalidValidationError); ok {
+			fmt.Println(err)
+			return "", nil
 		}
-		if err := intMinValue(rule, name, value); err != nil {
-			return err
+
+		for n, e := range err.(validation.ValidationErrors) {
+			message := fmt.Sprintf("%s must %s,", e.Field(), e.Tag())
+			if n == (len(err.(validation.ValidationErrors)) - 1) {
+				if e.Tag() == "email" {
+					message = "Please input correct email format"
+				} else {
+					message = fmt.Sprintf("%s must %s", e.Field(), e.Tag())
+				}
+			}
+			errors = append(errors, message)
 		}
-		if err := intMaxValue(rule, name, value); err != nil {
-			return err
-		}
+		return fmt.Sprint(errors), err
 	}
 
-	return nil
-}
-
-func intRequired(rule, name string, value int) error {
-	if !strings.Contains(rule, "required") {
-		return nil
-	}
-	if value == 0 {
-		return fmt.Errorf("field %s must be filled", name)
-	}
-
-	return nil
-}
-
-func intMinValue(rule, name string, value int) error {
-	if !strings.Contains(rule, "min") {
-		return nil
-	}
-	r := strings.Split(rule, ":")
-	if len(r) < 2 {
-		return fmt.Errorf("min-value invalid rule definition, name : " + name)
-	}
-
-	limit, err := strconv.Atoi(strings.TrimSpace(r[1]))
 	if err != nil {
-		return fmt.Errorf("invalid rule:(%s) %w", name, err)
+		arrayOfErrors := []string{err.Error()}
+		return fmt.Sprint(arrayOfErrors), err
 	}
 
-	if value < limit {
-		return fmt.Errorf("field %s must not less than %d", name, limit)
-	}
-
-	return nil
+	return "", err
 }
 
-func intMaxValue(rule, name string, value int) error {
-	if !strings.Contains(rule, "max") {
-		return nil
-	}
-	r := strings.Split(rule, ":")
-	if len(r) < 2 {
-		return fmt.Errorf("max-value invalid rule definition, name : " + name)
-	}
+func IsEmail(value string) bool {
 
-	limit, err := strconv.Atoi(strings.TrimSpace(r[1]))
+	err := validationError.Var(value, "required,email")
 	if err != nil {
-		return fmt.Errorf("invalid rule:(%s) %w", name, err)
+		fmt.Println(err.Error())
+		return false
 	}
 
-	if value > limit {
-		return fmt.Errorf("field %s must not greater than %d", name, limit)
+	return true
+}
+
+func IsPhone(value string) bool {
+
+	err := validationError.Var(value, "required,startswith=+,min=7,max=13")
+	if err != nil {
+		fmt.Println(err.Error())
+		return false
 	}
 
-	return nil
+	return true
+}
+
+func IsImageUrl(value string) bool {
+	if strings.HasSuffix(strings.ToUpper(value), ".JPG") || strings.HasSuffix(strings.ToUpper(value), ".JPEG") {
+		return true
+	}
+	return false
 }

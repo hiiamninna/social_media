@@ -1,31 +1,35 @@
 package collections
 
 type UserRegisterInput struct {
-	CredType  string `json:"credentialType"`
-	CredValue string `json:"credentialValue"`
+	CredType  string `json:"credentialType" validate:"required,oneof=phone email"`
+	CredValue string `json:"credentialValue" validate:"required"`
 	Email     string
 	Phone     string
-	Name      string `json:"name"`
-	Password  string `json:"password"`
+	Name      string `json:"name" validate:"required,min=5,max=50"`
+	Password  string `json:"password" validate:"required,min=5,max=15"`
 	ImageUrl  string
 }
 
 type UserLoginInput struct {
-	CredType  string `json:"credentialType"`
-	CredValue string `json:"credentialValue"`
-	Password  string `json:"password"`
+	CredType  string `json:"credentialType" validate:"required,oneof=phone email"`
+	CredValue string `json:"credentialValue" validate:"required"`
+	Password  string `json:"password" validate:"required,min=5,max=15"`
 }
 
-type UserLinkInput struct {
+type UserLinkEmail struct {
 	UserID string
-	Email  string `json:"email"`
-	Phone  string `json:"phone"`
+	Email  string `json:"email" validate:"required,email"`
+}
+
+type UserLinkPhone struct {
+	UserID string
+	Phone  string `json:"phone" validate:"required,startswith=+,min=7,max=13"`
 }
 
 type UserUpdateInput struct {
 	UserID   string
-	ImageUrl string `json:"imageUrl"`
-	Name     string `json:"name"`
+	ImageUrl string `json:"imageUrl" validate:"required,url"`
+	Name     string `json:"name" validate:"required,min=5,max=50"`
 }
 
 type FriendInputParam struct {
