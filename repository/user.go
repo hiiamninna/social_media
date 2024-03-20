@@ -21,13 +21,16 @@ func (r User) Create(input collections.UserRegisterInput) (int, error) {
 	var id int
 	sql := `INSERT INTO users (email, phone, name, password, image_url, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, current_timestamp, current_timestamp) RETURNING id;`
 	rows, err := r.db.Query(sql, input.Email, input.Phone, input.Name, input.Password, input.ImageUrl)
+	if err != nil {
+		return 0, fmt.Errorf("create : %s", err.Error())
+	}
 
 	for rows.Next() {
 		rows.Scan(&id)
 	}
 	defer rows.Close()
 
-	return id, fmt.Errorf("create : %s", err.Error())
+	return id, nil
 }
 
 func (r User) GetByEmail(email string) (collections.User, error) {
@@ -80,7 +83,7 @@ func (r User) UpdateProfile(input collections.UserUpdateInput) error {
 	return nil
 }
 
-func (r User) UpdateEmail(input collections.UserLinkInput) error {
+func (r User) UpdateEmail(input collections.UserLinkEmail) error {
 
 	sql := `UPDATE users SET email = $1, updated_at = current_timestamp WHERE id = $2 AND deleted_at IS NULL;`
 	_, err := r.db.Exec(sql, input.Email, input.UserID)
@@ -91,7 +94,7 @@ func (r User) UpdateEmail(input collections.UserLinkInput) error {
 	return nil
 }
 
-func (r User) UpdatePhone(input collections.UserLinkInput) error {
+func (r User) UpdatePhone(input collections.UserLinkPhone) error {
 
 	sql := `UPDATE users SET phone = $1, updated_at = current_timestamp WHERE id = $2 AND deleted_at IS NULL;`
 	_, err := r.db.Exec(sql, input.Phone, input.UserID)
