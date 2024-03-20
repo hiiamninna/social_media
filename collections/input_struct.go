@@ -44,7 +44,7 @@ type FriendInputParam struct {
 
 type FriendInput struct {
 	UserID   string
-	FriendID string `json:"userId"`
+	FriendID string `json:"userId" validate:"required"`
 }
 
 type PostInput struct {

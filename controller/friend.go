@@ -23,23 +23,25 @@ func NewFriendController(repo repository.Repository) Friend {
 
 func (c Friend) List(ctx *fiber.Ctx) (int, string, interface{}, interface{}, error) {
 
-	raw := ctx.Request().Body()
 	input := collections.FriendInputParam{}
-	err := json.Unmarshal([]byte(raw), &input)
+	err := ctx.QueryParser(&input)
 	if err != nil {
 		return http.StatusBadRequest, "unmarshal input", nil, nil, err
 	}
 
 	input.UserID = library.GetUserID(ctx)
 
-	friends, err := c.repo.Friend.List(input)
+	friends, err := c.repo.Friend.List(&input)
 	if err != nil {
 		return http.StatusInternalServerError, "failed get list of friends", nil, nil, err
 	}
 
-	// TODO : formatted return data, time
+	totalRow, err := c.repo.Friend.CountList(input)
+	if err != nil {
+		return http.StatusInternalServerError, "failed get list of friends", nil, nil, err
+	}
 
-	return http.StatusOK, "ok", friends, collections.Meta{}, nil
+	return http.StatusOK, "ok", friends, collections.Meta{Limit: input.Limit, Offset: input.Offset, Total: totalRow}, nil
 }
 
 func (c Friend) Create(ctx *fiber.Ctx) (int, string, interface{}, interface{}, error) {
@@ -49,6 +51,11 @@ func (c Friend) Create(ctx *fiber.Ctx) (int, string, interface{}, interface{}, e
 	err := json.Unmarshal([]byte(raw), &input)
 	if err != nil {
 		return http.StatusBadRequest, "unmarshal input", nil, nil, err
+	}
+
+	message, err := library.ValidateInput(input)
+	if err != nil {
+		return http.StatusBadRequest, message, nil, nil, err
 	}
 
 	input.UserID = library.GetUserID(ctx)
@@ -69,7 +76,7 @@ func (c Friend) Create(ctx *fiber.Ctx) (int, string, interface{}, interface{}, e
 
 	err = c.repo.Friend.Create(input)
 	if err != nil {
-		return http.StatusBadRequest, "failed to be friend", nil, nil, errors.New("failed to be friend")
+		return http.StatusBadRequest, "failed to be friend", nil, nil, err
 	}
 
 	return http.StatusOK, "successfully added as a friend", nil, nil, nil
@@ -84,6 +91,11 @@ func (c Friend) Delete(ctx *fiber.Ctx) (int, string, interface{}, interface{}, e
 		return http.StatusBadRequest, "unmarshal input", nil, nil, err
 	}
 
+	message, err := library.ValidateInput(input)
+	if err != nil {
+		return http.StatusBadRequest, message, nil, nil, err
+	}
+
 	input.UserID = library.GetUserID(ctx)
 
 	newFriend, _ := c.repo.User.GetByID(input.FriendID)
@@ -96,7 +108,7 @@ func (c Friend) Delete(ctx *fiber.Ctx) (int, string, interface{}, interface{}, e
 		return http.StatusBadRequest, "not your friend", nil, nil, errors.New("not your friend")
 	}
 
-	err = c.repo.Friend.Delete(friend.Id)
+	err = c.repo.Friend.Delete(friend.Id, input.UserID, input.FriendID)
 	if err != nil {
 		return http.StatusInternalServerError, "failed unfriend", nil, nil, errors.New("failed unfriend")
 	}

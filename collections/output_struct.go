@@ -31,11 +31,12 @@ type User struct {
 }
 
 type UserAsFriend struct {
-	UserId      string    `json:"userId"`
-	Name        string    `json:"name"`
-	ImageUrl    string    `json:"imageUrl"`
-	FriendCount int       `json:"friendCount"`
-	CreatedAt   time.Time `json:"createdAt"`
+	UserId      string `json:"userId"`
+	Name        string `json:"name"`
+	ImageUrl    string `json:"imageUrl"`
+	FriendCount int    `json:"friendCount"`
+	TCreatedAt  time.Time
+	CreatedAt   string `json:"createdAt"`
 }
 
 type Friend struct {

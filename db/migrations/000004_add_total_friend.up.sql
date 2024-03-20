@@ -1,0 +1,2 @@
+ALTER TABLE users ADD COLUMN total_friend INT DEFAULT 0;
+
