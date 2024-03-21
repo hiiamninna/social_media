@@ -48,7 +48,7 @@ func (r Friend) Create(input collections.FriendInput) error {
 	return nil
 }
 
-func (r Friend) List(input *collections.FriendInputParam) ([]collections.UserAsFriend, error) {
+func (r Friend) List(input collections.FriendInputParam) ([]collections.UserAsFriend, error) {
 
 	var filter, order string
 	var values []interface{}
@@ -113,12 +113,12 @@ func (r Friend) List(input *collections.FriendInputParam) ([]collections.UserAsF
 	for rows.Next() {
 		f := collections.UserAsFriend{}
 
-		err := rows.Scan(&f.UserId, &f.Name, &f.ImageUrl, &f.FriendCount, &f.TCreatedAt)
+		err := rows.Scan(&f.UserId, &f.Name, &f.ImageUrl, &f.FriendCount, &f.CreatedAt)
 		if err != nil {
 			return friends, fmt.Errorf("rows scan : %w", err)
 		}
 
-		f.CreatedAt = f.TCreatedAt.Format(time.RFC3339)
+		f.CreatedAtStr = f.CreatedAt.Format(time.RFC3339)
 
 		friends = append(friends, f)
 	}

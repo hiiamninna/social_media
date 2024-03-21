@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"social_media/collections"
 	"strings"
+	"time"
 
 	"github.com/lib/pq"
 )
@@ -41,7 +42,10 @@ func (r Post) List(input collections.PostInputParam) ([]collections.Post, []int,
 	var values []interface{}
 	counter, query := 1, ""
 
-	sql := `SELECT p.id, TEXT(p.id), p.post, p.tags, p.created_at, p.user_id FROM posts p WHERE p.deleted_at is null [query] ORDER BY p.created_at DESC [pagination];`
+	sql := `SELECT p.id, TEXT(p.id), p.post, p.tags, p.created_at, p.user_id, u.id, u.name, u.image_url, u.total_friend, u.created_at FROM posts p 
+			LEFT JOIN users u ON u.id = p.user_id
+			WHERE (p.user_id = ` + input.UserID + ` OR p.user_id IN (SELECT user_id AS id from friends WHERE deleted_at is null AND added_by = ` + input.UserID + ` UNION SELECT added_by AS id from friends WHERE deleted_at is null AND user_id = ` + input.UserID + `)) AND p.deleted_at is null [query]
+			ORDER BY p.created_at DESC [pagination];`
 
 	if input.Search != "" {
 		query += fmt.Sprintf("AND p.post ~* $%d ", counter)
@@ -74,10 +78,13 @@ func (r Post) List(input collections.PostInputParam) ([]collections.Post, []int,
 	for rows.Next() {
 		p := collections.Post{}
 
-		err := rows.Scan(&p.ID, &p.PostID, &p.PostData.PostInHtml, pq.Array(&p.PostData.Tags), &p.PostData.CreatedAt, &p.UserID)
+		err := rows.Scan(&p.ID, &p.PostID, &p.PostData.PostInHtml, pq.Array(&p.PostData.Tags), &p.PostData.CreatedAt, &p.UserID, &p.Creator.UserId, &p.Creator.Name, &p.Creator.ImageUrl, &p.Creator.FriendCount, &p.Creator.CreatedAt)
 		if err != nil {
-			return posts, ids, meta, fmt.Errorf("rows scan : %w", err)
+			return posts, ids, meta, fmt.Errorf("row scan : %w", err)
 		}
+
+		p.PostData.CreatedAtStr = p.PostData.CreatedAt.Format(time.RFC3339)
+		p.Creator.CreatedAtStr = p.Creator.CreatedAt.Format(time.RFC3339)
 
 		posts = append(posts, p)
 		ids = append(ids, p.ID)
@@ -97,7 +104,7 @@ func (r Post) ListCount(input collections.PostInputParam) (int, error) {
 	var values []interface{}
 	counter, query := 1, ""
 
-	sql := `SELECT COUNT(*) FROM posts p WHERE p.deleted_at is null [query];`
+	sql := `SELECT COUNT(*) FROM posts p WHERE (p.user_id = ` + input.UserID + ` OR p.user_id IN (SELECT user_id AS id from friends WHERE deleted_at is null AND added_by = ` + input.UserID + ` UNION SELECT added_by AS id from friends WHERE deleted_at is null AND user_id = ` + input.UserID + `)) AND p.deleted_at is null [query];`
 
 	if input.Search != "" {
 		query += fmt.Sprintf("AND p.post ~* $%d ", counter)
@@ -135,21 +142,13 @@ func (r Post) ListCount(input collections.PostInputParam) (int, error) {
 	return total, nil
 }
 
-func (r Post) GetById(id string) (collections.Post, error) {
+func (r Post) GetById(id string) (collections.PostData, error) {
 
-	post := collections.Post{}
-	sql := `SELECT id, post, tags, created_at, user_id FROM posts WHERE deleted_at IS NULL;`
-	rows, err := r.db.Query(sql)
+	post := collections.PostData{}
+	sql := `SELECT id, post, tags, created_at, user_id FROM posts WHERE id = $1 AND deleted_at IS NULL;`
+	err := r.db.QueryRow(sql, id).Scan(&post.ID, &post.Post, pq.Array(&post.Tags), &post.CreatedAt, &post.UserID)
 	if err != nil {
 		return post, fmt.Errorf("get post by id : %w", err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		err := rows.Scan(&post.PostID, &post.PostData.PostInHtml, pq.Array(&post.PostData.Tags), &post.PostData.CreatedAt, &post.UserID)
-		if err != nil {
-			return post, fmt.Errorf("rows scan : %w", err)
-		}
 	}
 
 	return post, nil

@@ -46,17 +46,13 @@ func (c Comment) Create(ctx *fiber.Ctx) (int, string, interface{}, interface{}, 
 		UserID:   input.UserID,
 		FriendID: post.UserID,
 	})
-	if err != nil {
-		return http.StatusBadRequest, "can not comment, not your friends", nil, nil, err
-	}
-
-	if friend.Id == 0 {
+	if err != nil || friend.Id == 0 {
 		return http.StatusBadRequest, "can not comment, not your friends", nil, nil, errors.New("not friend")
 	}
 
 	err = c.repo.Comment.Create(input)
 	if err != nil {
-		return http.StatusBadRequest, "failed add comment", nil, nil, errors.New("failed add comment")
+		return http.StatusInternalServerError, "failed add comment", nil, nil, errors.New("failed add comment")
 	}
 
 	return http.StatusOK, "successfully added a comment", nil, nil, nil
