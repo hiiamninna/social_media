@@ -31,12 +31,12 @@ type User struct {
 }
 
 type UserAsFriend struct {
-	UserId      string `json:"userId"`
-	Name        string `json:"name"`
-	ImageUrl    string `json:"imageUrl"`
-	FriendCount int    `json:"friendCount"`
-	TCreatedAt  time.Time
-	CreatedAt   string `json:"createdAt"`
+	UserId       string    `json:"userId"`
+	Name         string    `json:"name"`
+	ImageUrl     string    `json:"imageUrl"`
+	FriendCount  int       `json:"friendCount"`
+	CreatedAt    time.Time `json:"-"`
+	CreatedAtStr string    `json:"createdAt"`
 }
 
 type Friend struct {
@@ -55,21 +55,39 @@ type Meta struct {
 	Total  int `json:"total"`
 }
 
+type PostData struct {
+	ID        int
+	Post      string
+	Tags      []string
+	CreatedAt time.Time
+	UserID    string
+}
+
 type Post struct {
 	UserID   string `json:"-"`
 	ID       int    `json:"-"`
 	PostID   string `json:"postId"`
 	PostData struct {
-		PostInHtml string    `json:"postInHtml"`
-		Tags       []string  `json:"tags"`
-		CreatedAt  time.Time `json:"createdAt"`
+		PostInHtml   string    `json:"postInHtml"`
+		Tags         []string  `json:"tags"`
+		CreatedAt    time.Time `json:"-"`
+		CreatedAtStr string    `json:"createdAt"`
 	} `json:"post"`
 	Comments []Comment    `json:"comments"`
 	Creator  UserAsFriend `json:"creator"`
 }
 
 type Comment struct {
-	PostID  string       `json:"-"`
-	Comment string       `json:"comment"`
-	Creator UserAsFriend `json:"creator"`
+	PostID       string    `json:"-"`
+	Comment      string    `json:"comment"`
+	Creator      Creator   `json:"creator"`
+	CreatedAt    time.Time `json:"-"`
+	CreatedAtStr string    `json:"createdAt"`
+}
+
+type Creator struct {
+	UserId      string `json:"userId"`
+	Name        string `json:"name"`
+	ImageUrl    string `json:"imageUrl"`
+	FriendCount int    `json:"friendCount"`
 }

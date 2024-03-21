@@ -47,8 +47,12 @@ func (c JWT) CreateToken(id string) (string, error) {
 func (c JWT) Authentication() fiber.Handler {
 	return func(context *fiber.Ctx) error {
 		errHandle := func(err error, message string) error {
-			fmt.Println(err.Error())
-			return context.Status(http.StatusUnauthorized).Send([]byte(message))
+			fmt.Println(time.Now().Format("2006-01-02 15:01:02 "), err)
+			return context.Status(http.StatusUnauthorized).JSON(struct {
+				Message string `json:"message"`
+			}{
+				Message: message,
+			})
 		}
 
 		input := context.Request().Header.Peek("Authorization")

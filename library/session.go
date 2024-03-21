@@ -28,6 +28,7 @@ func SetSession(context *fiber.Ctx, userID string) error {
 		return err
 	}
 
+	// fmt.Println("user : " + userID)
 	return nil
 }
 

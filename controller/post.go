@@ -72,52 +72,24 @@ func (c Post) List(ctx *fiber.Ctx) (int, string, interface{}, interface{}, error
 		return http.StatusInternalServerError, "comment list error", nil, nil, err
 	}
 
-	creator, err := c.repo.User.List()
-	if err != nil {
-		return http.StatusInternalServerError, "creator list error", nil, nil, err
-	}
-
 	for _, p := range posts {
 		result = append(result, collections.Post{
 			PostID: p.PostID,
 			PostData: struct {
-				PostInHtml string    "json:\"postInHtml\""
-				Tags       []string  "json:\"tags\""
-				CreatedAt  time.Time "json:\"createdAt\""
+				PostInHtml   string    `json:"postInHtml"`
+				Tags         []string  `json:"tags"`
+				CreatedAt    time.Time `json:"-"`
+				CreatedAtStr string    `json:"createdAt"`
 			}{
-				PostInHtml: p.PostData.PostInHtml,
-				Tags:       p.PostData.Tags,
-				CreatedAt:  p.PostData.CreatedAt,
+				PostInHtml:   p.PostData.PostInHtml,
+				Tags:         p.PostData.Tags,
+				CreatedAtStr: p.PostData.CreatedAtStr,
 			},
-			Comments: getComments(p.PostID, comments),
-			Creator:  getCreator(p.UserID, creator),
+			Comments: comments[p.ID],
+			Creator:  p.Creator,
 		})
 	}
 
 	return http.StatusOK, "ok", result, meta, nil
 
-}
-
-func getComments(postID string, comments []collections.Comment) []collections.Comment {
-
-	temp := []collections.Comment{}
-
-	for _, c := range comments {
-		if c.PostID == postID {
-			temp = append(temp, c)
-		}
-	}
-
-	return temp
-}
-
-func getCreator(userID string, creator []collections.UserAsFriend) collections.UserAsFriend {
-
-	for _, c := range creator {
-		if c.UserId == userID {
-			return c
-		}
-	}
-
-	return collections.UserAsFriend{}
 }

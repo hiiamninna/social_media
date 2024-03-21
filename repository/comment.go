@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"social_media/collections"
+	"time"
 )
 
 type Comment struct {
@@ -26,44 +27,37 @@ func (r Comment) Create(input collections.CommentInput) error {
 	return nil
 }
 
-func (r Comment) List(postIds []int) ([]collections.Comment, error) {
+func (r Comment) List(postIds []int) (map[int][]collections.Comment, error) {
 
-	comments := []collections.Comment{}
-	sql := `SELECT c.comment, u.id, u.name, u.image_url, 1, c.created_at, c.post_id FROM comments c LEFT JOIN users u ON c.user_id = u.id WHERE c.deleted_at IS NULL and u.deleted_at IS NULL 
-	`
+	result := make(map[int][]collections.Comment)
 
-	var values []interface{}
 	if len(postIds) > 0 {
-		sql += "AND c.post_id in("
-		for i, id := range postIds {
-			// and c.post_id in ([post_ids])
-			sql += fmt.Sprintf("$%d", (i + 1))
-			if i+1 != len(postIds) {
-				sql += ","
+		for _, p := range postIds {
+			sql := fmt.Sprintf(`SELECT c.comment, u.id, u.name, u.image_url, u.total_friend, c.created_at, c.post_id FROM comments c 
+					LEFT JOIN users u ON c.user_id = u.id WHERE c.deleted_at IS NULL AND c.post_id = %d ORDER BY c.created_at DESC;`, p)
+			rows, err := r.db.Query(sql)
+			if err != nil {
+				return result, fmt.Errorf("select comment list : %w", err)
 			}
-			values = append(values, id)
+			defer rows.Close()
+
+			comments := []collections.Comment{}
+			for rows.Next() {
+				c := collections.Comment{}
+
+				err := rows.Scan(&c.Comment, &c.Creator.UserId, &c.Creator.Name, &c.Creator.ImageUrl, &c.Creator.FriendCount, &c.CreatedAt, &c.PostID)
+				if err != nil {
+					return result, fmt.Errorf("rows scan : %w", err)
+				}
+
+				// TODO : check time format ISO 8601
+				c.CreatedAtStr = c.CreatedAt.Format(time.RFC3339)
+				comments = append(comments, c)
+			}
+
+			result[p] = comments
 		}
-		sql += ")"
 	}
 
-	sql += ";"
-
-	rows, err := r.db.Query(sql, values...)
-	if err != nil {
-		return comments, fmt.Errorf("select comment list : %w", err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		c := collections.Comment{}
-
-		err := rows.Scan(&c.Comment, &c.Creator.UserId, &c.Creator.Name, &c.Creator.ImageUrl, &c.Creator.FriendCount, &c.Creator.CreatedAt, &c.PostID)
-		if err != nil {
-			return comments, fmt.Errorf("rows scan : %w", err)
-		}
-
-		comments = append(comments, c)
-	}
-
-	return comments, nil
+	return result, nil
 }

@@ -31,7 +31,7 @@ func (c Friend) List(ctx *fiber.Ctx) (int, string, interface{}, interface{}, err
 
 	input.UserID = library.GetUserID(ctx)
 
-	friends, err := c.repo.Friend.List(&input)
+	friends, err := c.repo.Friend.List(input)
 	if err != nil {
 		return http.StatusInternalServerError, "failed get list of friends", nil, nil, err
 	}
