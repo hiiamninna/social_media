@@ -14,6 +14,7 @@ type Database struct {
 	Port     string
 	Username string
 	Password string
+	Params   string
 }
 
 func NewDatabaseConnection(dbCfg Database) (*sql.DB, error) {
@@ -30,9 +31,15 @@ func NewDatabaseConnection(dbCfg Database) (*sql.DB, error) {
 	return db, nil
 }
 
+/**
 func dsn(dbCfg Database) string {
 	if dbCfg.Env == "production" {
 		return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=verify-full&sslrootcert=ap-southeast-1-bundle.pem", dbCfg.Username, dbCfg.Password, dbCfg.Host, dbCfg.Port, dbCfg.Name)
 	}
 	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", dbCfg.Username, dbCfg.Password, dbCfg.Host, dbCfg.Port, dbCfg.Name)
+}
+**/
+
+func dsn(dbCfg Database) string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?%s", dbCfg.Username, dbCfg.Password, dbCfg.Host, dbCfg.Port, dbCfg.Name, dbCfg.Params)
 }

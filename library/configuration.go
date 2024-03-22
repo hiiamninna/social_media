@@ -35,11 +35,13 @@ func NewConfiguration() (Config, error) {
 			Port:     EnvString("DB_PORT"),
 			Username: EnvString("DB_USERNAME"),
 			Password: EnvString("DB_PASSWORD"),
+			Params:   EnvString("DB_PARAMS"),
 		},
 		S3Config: S3Config{
 			ID:         EnvString("S3_ID"),
 			SecretKey:  EnvString("S3_SECRET_KEY"),
 			BucketName: EnvString("S3_BUCKET_NAME"),
+			Region:     EnvString("S3_REGION"),
 		},
 	}
 
