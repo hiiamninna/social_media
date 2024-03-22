@@ -29,6 +29,11 @@ func (c Friend) List(ctx *fiber.Ctx) (int, string, interface{}, interface{}, err
 		return http.StatusBadRequest, "unmarshal input", nil, nil, err
 	}
 
+	message, err := library.ValidateInput(input)
+	if err != nil {
+		return http.StatusBadRequest, message, nil, nil, err
+	}
+
 	input.UserID = library.GetUserID(ctx)
 
 	friends, err := c.repo.Friend.List(input)

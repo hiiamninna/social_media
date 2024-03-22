@@ -35,11 +35,11 @@ type UserUpdateInput struct {
 type FriendInputParam struct {
 	UserID     string
 	Search     string `query:"search"`
-	OnlyFriend bool   `query:"onlyFriend"`
-	OrderBy    string `query:"orderBy"`
-	SortBy     string `query:"sortBy"`
-	Limit      int    `query:"limit"`
-	Offset     int    `query:"offset"`
+	OnlyFriend bool   `query:"onlyFriend" validate:"required,oneof=true false"`
+	OrderBy    string `query:"orderBy" validate:"required,oneof=asc desc"`
+	SortBy     string `query:"sortBy" validate:"required,oneof=friendCount createdAt"`
+	Limit      int    `query:"limit" validate:"required,min=0"`
+	Offset     int    `query:"offset" validate:"required,min=0"`
 }
 
 type FriendInput struct {
@@ -57,8 +57,8 @@ type PostInputParam struct {
 	UserID string
 	Tags   []string `query:"searchTag"`
 	Search string   `query:"search"`
-	Limit  int      `query:"limit"`
-	Offset int      `query:"offset"`
+	Limit  int      `query:"limit" validate:"required,min=0"`
+	Offset int      `query:"offset" validate:"required,min=0"`
 }
 
 type CommentInput struct {
