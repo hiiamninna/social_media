@@ -173,9 +173,9 @@ func (c User) UpdateProfile(ctx *fiber.Ctx) (int, string, interface{}, interface
 		return http.StatusBadRequest, message, nil, nil, err
 	}
 
-	isImage := library.IsImageUrl(input.ImageUrl)
+	isImage := library.IsHaveExt(input.ImageUrl)
 	if !isImage {
-		return http.StatusBadRequest, "not image url", nil, nil, errors.New("not image url")
+		return http.StatusBadRequest, "not valid url", nil, nil, errors.New("not valid url")
 	}
 
 	err = c.repo.User.UpdateProfile(input)
