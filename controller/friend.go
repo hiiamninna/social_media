@@ -39,6 +39,24 @@ func (c Friend) List(ctx *fiber.Ctx) (int, string, interface{}, interface{}, err
 		return http.StatusBadRequest, "unmarshal input", nil, nil, err
 	}
 
+	//TODO : temporary solution if limit= OR offset=
+	//clue=>everything from url is a string
+	maps := ctx.Queries()
+	if val, ok := maps["limit"]; ok {
+		if val == "" {
+			return http.StatusBadRequest, "limit an empty value", nil, nil, errors.New("limit can not empty")
+		}
+		if val == "0" {
+			input.Limit = 5
+		}
+	}
+
+	if val, ok := maps["offset"]; ok {
+		if val == "" {
+			return http.StatusBadRequest, "offset an empty value", nil, nil, errors.New("offset can not empty")
+		}
+	}
+
 	message, err := library.ValidateInput(input)
 	if err != nil {
 		return http.StatusBadRequest, message, nil, nil, err
