@@ -91,19 +91,9 @@ func (r Friend) List(input collections.FriendInputParam) ([]collections.UserAsFr
 
 	sql = strings.ReplaceAll(sql, "[filter]", filter)
 	sql = strings.ReplaceAll(sql, "[order]", order)
-
-	if input.Limit != 0 && input.Offset != 0 {
-		sql = strings.ReplaceAll(sql, "[limit]", fmt.Sprintf(" LIMIT %d OFFSET %d ", input.Limit, input.Offset))
-	} else {
-		sql = strings.ReplaceAll(sql, "[limit]", " LIMIT 5 OFFSET 0 ")
-		input.Limit = 5
-		input.Offset = 0
-	}
+	sql = strings.ReplaceAll(sql, "[limit]", fmt.Sprintf(" LIMIT %d OFFSET %d ", input.Limit, input.Offset))
 
 	friends := []collections.UserAsFriend{}
-
-	fmt.Println(sql)
-
 	rows, err := r.db.Query(sql, values...)
 	if err != nil {
 		return friends, fmt.Errorf("exec query : %w", err)

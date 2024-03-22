@@ -48,7 +48,13 @@ func (c Post) Create(ctx *fiber.Ctx) (int, string, interface{}, interface{}, err
 
 func (c Post) List(ctx *fiber.Ctx) (int, string, interface{}, interface{}, error) {
 
-	input := collections.PostInputParam{}
+	input := collections.PostInputParam{
+		UserID: library.GetUserID(ctx),
+		Tags:   []string{},
+		Search: "",
+		Limit:  5,
+		Offset: 0,
+	}
 	if err := ctx.QueryParser(&input); err != nil {
 		return http.StatusInternalServerError, "list post error", nil, nil, err
 	}
@@ -57,13 +63,6 @@ func (c Post) List(ctx *fiber.Ctx) (int, string, interface{}, interface{}, error
 	if err != nil {
 		return http.StatusBadRequest, message, nil, nil, err
 	}
-
-	if input.Limit == 0 {
-		input.Limit = 5
-		input.Offset = 0
-	}
-
-	input.UserID = library.GetUserID(ctx)
 
 	result := []collections.Post{}
 
