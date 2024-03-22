@@ -23,7 +23,17 @@ func NewFriendController(repo repository.Repository) Friend {
 
 func (c Friend) List(ctx *fiber.Ctx) (int, string, interface{}, interface{}, error) {
 
-	input := collections.FriendInputParam{}
+	// set default value first
+	input := collections.FriendInputParam{
+		UserID:        library.GetUserID(ctx),
+		Search:        "",
+		OnlyFriendStr: "false",
+		OnlyFriend:    false,
+		OrderBy:       "desc",
+		SortBy:        "createdAt",
+		Limit:         5,
+		Offset:        0,
+	}
 	err := ctx.QueryParser(&input)
 	if err != nil {
 		return http.StatusBadRequest, "unmarshal input", nil, nil, err
@@ -34,7 +44,9 @@ func (c Friend) List(ctx *fiber.Ctx) (int, string, interface{}, interface{}, err
 		return http.StatusBadRequest, message, nil, nil, err
 	}
 
-	input.UserID = library.GetUserID(ctx)
+	if input.OnlyFriendStr == "true" {
+		input.OnlyFriend = true
+	}
 
 	friends, err := c.repo.Friend.List(input)
 	if err != nil {
