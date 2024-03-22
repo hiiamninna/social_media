@@ -2,6 +2,7 @@ package library
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 
 	validation "github.com/go-playground/validator/v10"
@@ -70,9 +71,12 @@ func IsPhone(value string) bool {
 	return true
 }
 
-func IsImageUrl(value string) bool {
-	if strings.HasSuffix(strings.ToUpper(value), ".JPG") || strings.HasSuffix(strings.ToUpper(value), ".JPEG") {
-		return true
+func IsHaveExt(value string) bool {
+	u, err := url.Parse(value)
+	if err != nil {
+		return false
 	}
-	return false
+
+	pos := strings.LastIndex(u.Path, ".")
+	return pos != -1
 }
