@@ -53,6 +53,11 @@ func (c Post) List(ctx *fiber.Ctx) (int, string, interface{}, interface{}, error
 		return http.StatusInternalServerError, "list post error", nil, nil, err
 	}
 
+	message, err := library.ValidateInput(input)
+	if err != nil {
+		return http.StatusBadRequest, message, nil, nil, err
+	}
+
 	if input.Limit == 0 {
 		input.Limit = 5
 		input.Offset = 0
