@@ -1,0 +1,1 @@
+-- TODO : create erd then analize the indexing or query optimize
