@@ -14,6 +14,7 @@ type S3Config struct {
 	ID         string
 	SecretKey  string
 	BucketName string
+	Region     string
 }
 
 type S3 struct {
