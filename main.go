@@ -173,21 +173,3 @@ func parseContextWithMatrics(path string, method string, f func(*fiber.Ctx) (int
 		return c.Status(code).Send(successBody)
 	}
 }
-
-func ParseContext(f func(*fiber.Ctx) (int, string, interface{}, interface{}, error)) func(*fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		code, message, resp, meta, err := f(c)
-		c.Set("Content-Type", "application/json")
-
-		if err != nil {
-			fmt.Println(time.Now().Format("2006-01-02 15:01:02 "), err)
-			errBody := Response(message, meta, nil)
-			c.Set("Content-Length", fmt.Sprintf("%d", len(errBody)))
-			return c.Status(code).Send(errBody)
-		}
-
-		successBody := Response(message, meta, resp)
-		c.Set("Content-Length", fmt.Sprintf("%d", len(successBody)))
-		return c.Status(code).Send(successBody)
-	}
-}

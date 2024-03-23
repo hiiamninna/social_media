@@ -56,7 +56,7 @@ type Meta struct {
 }
 
 type PostData struct {
-	ID        int
+	ID        string
 	Post      string
 	Tags      []string
 	CreatedAt time.Time
