@@ -10,7 +10,7 @@ DROP INDEX index_friends_created_at;
 DROP INDEX index_posts_id;
 DROP INDEX index_posts_user_id;
 DROP INDEX index_posts_post;
-DROP INDEX index_posts_tags;
+-- DROP INDEX index_posts_tags;
 DROP INDEX index_posts_created_at;
 
 DROP INDEX index_comments_id;
