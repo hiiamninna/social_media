@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	validation "github.com/go-playground/validator/v10"
 )
@@ -23,7 +24,7 @@ func ValidateInput(data interface{}) (string, error) {
 		// an invalid value for validation such as interface with nil
 		// value most including myself do not usually have code like this.
 		if _, ok := err.(*validation.InvalidValidationError); ok {
-			fmt.Println(err)
+			fmt.Println(time.Now().Format("2006-01-02 15:01:02 "), err)
 			return "", nil
 		}
 
@@ -53,7 +54,7 @@ func IsEmail(value string) bool {
 
 	err := validationError.Var(value, "required,email")
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println(time.Now().Format("2006-01-02 15:01:02 "), err)
 		return false
 	}
 
@@ -64,7 +65,7 @@ func IsPhone(value string) bool {
 
 	err := validationError.Var(value, "required,startswith=+,min=7,max=13")
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println(time.Now().Format("2006-01-02 15:01:02 "), err)
 		return false
 	}
 
