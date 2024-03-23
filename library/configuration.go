@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -21,7 +22,7 @@ func NewConfiguration() (Config, error) {
 
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Println("load env : %w", &err)
+		fmt.Println(time.Now().Format("2006-01-02 15:01:02 "), "load env : "+err.Error())
 	}
 
 	config := Config{

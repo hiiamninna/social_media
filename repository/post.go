@@ -92,7 +92,7 @@ func (r Post) List(input collections.PostInputParam) ([]collections.Post, []int,
 
 	meta.Total, err = r.ListCount(input)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println(time.Now().Format("2006-01-02 15:01:02 "), "list count +"+err.Error())
 	}
 
 	return posts, ids, meta, nil

@@ -24,7 +24,7 @@ func main() {
 
 	context, err := NewContext()
 	if err != nil {
-		fmt.Println("new context : %w", err.Error())
+		fmt.Println(time.Now().Format(TIME_FORMAT), "new context : "+err.Error())
 	}
 
 	// set route
@@ -63,11 +63,11 @@ func main() {
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		_ = <-c
-		fmt.Println("Gracefully shutting down...")
+		fmt.Println(time.Now().Format(TIME_FORMAT), "Gracefully shutting down...")
 		_ = app.Shutdown()
 	}()
 	if err := app.Listen(":8080"); err != nil {
-		fmt.Println("error on http listen : %w", err)
+		fmt.Println(time.Now().Format(TIME_FORMAT), "error on http listens : "+err.Error())
 	}
 }
 
@@ -85,7 +85,7 @@ func Response(message string, meta interface{}, data interface{}) []byte {
 
 	value, err := json.Marshal(response)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println(time.Now().Format(TIME_FORMAT), "marshal : "+err.Error())
 	}
 
 	return value
@@ -102,7 +102,7 @@ func NewContext() (Context, error) {
 	// read config
 	config, err := library.NewConfiguration()
 	if err != nil {
-		fmt.Println("new config : %w", err)
+		fmt.Println(time.Now().Format(TIME_FORMAT), "new config : "+err.Error())
 	}
 
 	// set up jwt
@@ -111,12 +111,12 @@ func NewContext() (Context, error) {
 	// set up db
 	db, err := library.NewDatabaseConnection(config.DB)
 	if err != nil {
-		fmt.Println("new db : %w", err)
+		fmt.Println(time.Now().Format(TIME_FORMAT), "new db : "+err.Error())
 	}
 
 	s3, err := library.NewS3(config.S3Config)
 	if err != nil {
-		fmt.Println("new s3 : %w", err)
+		fmt.Println(time.Now().Format(TIME_FORMAT), "new s3 : "+err.Error())
 	}
 
 	// set up repo and controller
@@ -161,7 +161,7 @@ func parseContextWithMatrics(path string, method string, f func(*fiber.Ctx) (int
 		c.Set("Content-Type", "application/json")
 
 		if err != nil {
-			fmt.Println(time.Now().Format("2006-01-02 15:01:02 "), err)
+			fmt.Println(time.Now().Format(TIME_FORMAT), err)
 			errBody := Response(message, meta, nil)
 			c.Set("Content-Length", fmt.Sprintf("%d", len(errBody)))
 			return c.Status(code).Send(errBody)
@@ -173,3 +173,5 @@ func parseContextWithMatrics(path string, method string, f func(*fiber.Ctx) (int
 		return c.Status(code).Send(successBody)
 	}
 }
+
+const TIME_FORMAT = "2006-01-02 15:01:02 "

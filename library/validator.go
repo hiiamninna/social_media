@@ -9,6 +9,8 @@ import (
 	validation "github.com/go-playground/validator/v10"
 )
 
+const TIME_FORMAT = "2006-01-02 15:01:02 "
+
 var validationError = validation.New()
 
 // Using validator
@@ -24,7 +26,7 @@ func ValidateInput(data interface{}) (string, error) {
 		// an invalid value for validation such as interface with nil
 		// value most including myself do not usually have code like this.
 		if _, ok := err.(*validation.InvalidValidationError); ok {
-			fmt.Println(time.Now().Format("2006-01-02 15:01:02 "), err)
+			fmt.Println(time.Now().Format(TIME_FORMAT), err)
 			return "", nil
 		}
 
@@ -54,7 +56,7 @@ func IsEmail(value string) bool {
 
 	err := validationError.Var(value, "required,email")
 	if err != nil {
-		fmt.Println(time.Now().Format("2006-01-02 15:01:02 "), err)
+		fmt.Println(time.Now().Format(TIME_FORMAT), err)
 		return false
 	}
 
@@ -65,7 +67,7 @@ func IsPhone(value string) bool {
 
 	err := validationError.Var(value, "required,startswith=+,min=7,max=13")
 	if err != nil {
-		fmt.Println(time.Now().Format("2006-01-02 15:01:02 "), err)
+		fmt.Println(time.Now().Format(TIME_FORMAT), err)
 		return false
 	}
 
