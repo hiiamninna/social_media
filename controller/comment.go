@@ -42,12 +42,15 @@ func (c Comment) Create(ctx *fiber.Ctx) (int, string, interface{}, interface{}, 
 		return http.StatusNotFound, "post not found", nil, nil, err
 	}
 
-	friend, err := c.repo.Friend.GetByUser(collections.FriendInput{
-		UserID:   input.UserID,
-		FriendID: post.UserID,
-	})
-	if err != nil || friend.Id == 0 {
-		return http.StatusBadRequest, "can not comment, not your friends", nil, nil, errors.New("not friend")
+	//author can commment to their own post
+	if input.UserID != post.UserID {
+		friend, err := c.repo.Friend.GetByUser(collections.FriendInput{
+			UserID:   input.UserID,
+			FriendID: post.UserID,
+		})
+		if err != nil || friend.Id == 0 {
+			return http.StatusBadRequest, "can not comment, not your friends", nil, nil, errors.New("not friend")
+		}
 	}
 
 	err = c.repo.Comment.Create(input)
