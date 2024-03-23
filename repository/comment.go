@@ -33,7 +33,7 @@ func (r Comment) List(postIds []int) (map[int][]collections.Comment, error) {
 
 	if len(postIds) > 0 {
 		for _, p := range postIds {
-			sql := fmt.Sprintf(`SELECT c.comment, u.id, u.name, u.image_url, u.total_friend, c.created_at, c.post_id FROM comments c 
+			sql := fmt.Sprintf(`SELECT c.comment, TEXT(u.id), u.name, u.image_url, u.total_friend, c.created_at, TEXT(c.post_id) FROM comments c 
 					LEFT JOIN users u ON c.user_id = u.id WHERE c.deleted_at IS NULL AND c.post_id = %d ORDER BY c.created_at DESC;`, p)
 			rows, err := r.db.Query(sql)
 			if err != nil {
@@ -50,7 +50,6 @@ func (r Comment) List(postIds []int) (map[int][]collections.Comment, error) {
 					return result, fmt.Errorf("rows scan : %w", err)
 				}
 
-				// TODO : check time format ISO 8601
 				c.CreatedAtStr = c.CreatedAt.Format(time.RFC3339)
 				comments = append(comments, c)
 			}

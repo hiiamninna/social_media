@@ -42,7 +42,7 @@ func (r Post) List(input collections.PostInputParam) ([]collections.Post, []int,
 	var values []interface{}
 	counter, query := 1, ""
 
-	sql := `SELECT p.id, TEXT(p.id), p.post, p.tags, p.created_at, p.user_id, u.id, u.name, u.image_url, u.total_friend, u.created_at FROM posts p 
+	sql := `SELECT p.id, TEXT(p.id), p.post, p.tags, p.created_at, TEXT(p.user_id), TEXT(u.id), u.name, u.image_url, u.total_friend, u.created_at FROM posts p 
 			LEFT JOIN users u ON u.id = p.user_id
 			WHERE (p.user_id = ` + input.UserID + ` OR p.user_id IN (SELECT user_id AS id from friends WHERE deleted_at is null AND added_by = ` + input.UserID + ` UNION SELECT added_by AS id from friends WHERE deleted_at is null AND user_id = ` + input.UserID + `)) AND p.deleted_at is null [query]
 			ORDER BY p.created_at DESC [pagination];`
@@ -92,7 +92,7 @@ func (r Post) List(input collections.PostInputParam) ([]collections.Post, []int,
 
 	meta.Total, err = r.ListCount(input)
 	if err != nil {
-		fmt.Println(time.Now().Format("2006-01-02 15:01:02 "), "list count +"+err.Error())
+		fmt.Println(time.Now().Format("2006-01-02 15:01:02 "), "list count : "+err.Error())
 	}
 
 	return posts, ids, meta, nil
@@ -145,7 +145,7 @@ func (r Post) ListCount(input collections.PostInputParam) (int, error) {
 func (r Post) GetById(id string) (collections.PostData, error) {
 
 	post := collections.PostData{}
-	sql := `SELECT id, post, tags, created_at, user_id FROM posts WHERE id = $1 AND deleted_at IS NULL;`
+	sql := `SELECT TEXT(id), post, tags, created_at, user_id FROM posts WHERE TEXT(id) = $1 AND deleted_at IS NULL;`
 	err := r.db.QueryRow(sql, id).Scan(&post.ID, &post.Post, pq.Array(&post.Tags), &post.CreatedAt, &post.UserID)
 	if err != nil {
 		return post, fmt.Errorf("get post by id : %w", err)

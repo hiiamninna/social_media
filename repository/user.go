@@ -63,7 +63,7 @@ func (r User) GetByID(id string) (collections.User, error) {
 
 	user := collections.User{}
 
-	sql := `SELECT TEXT(id), name, email, phone, image_url, password FROM users WHERE id = $1 and deleted_at is null;`
+	sql := `SELECT TEXT(id), name, email, phone, image_url, password FROM users WHERE TEXT(id) = $1 and deleted_at is null;`
 	err := r.db.QueryRow(sql, id).Scan(&user.Id, &user.Name, &user.Email, &user.Phone, &user.ImageUrl, &user.Password)
 	if err != nil {
 		return user, fmt.Errorf("get by id : %s", err.Error())

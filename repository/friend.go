@@ -55,7 +55,7 @@ func (r Friend) List(input collections.FriendInputParam) ([]collections.UserAsFr
 
 	valuesCount := 1
 
-	sql := `SELECT u.id, u.name, u.image_url, u.total_friend, u.created_at u FROM users u [join] WHERE u.deleted_at is null [filter] [order] [limit] ;`
+	sql := `SELECT TEXT(u.id), u.name, u.image_url, u.total_friend, u.created_at u FROM users u [join] WHERE u.deleted_at is null [filter] [order] [limit] ;`
 
 	if input.OnlyFriend {
 		sql = strings.ReplaceAll(sql, "[join]", fmt.Sprintf(`INNER JOIN (
@@ -165,7 +165,7 @@ func (r Friend) CountList(input collections.FriendInputParam) (int, error) {
 func (r Friend) GetByUser(input collections.FriendInput) (collections.Friend, error) {
 
 	friend := collections.Friend{}
-	sql := `SELECT id, user_id, added_by FROM friends WHERE ((added_by = $1 AND user_id = $2) OR (user_id = $3 AND added_by = $4)) AND deleted_at IS NULL;`
+	sql := `SELECT TEXT(id), user_id, added_by FROM friends WHERE ((added_by = $1 AND user_id = $2) OR (user_id = $3 AND added_by = $4)) AND deleted_at IS NULL;`
 	err := r.db.QueryRow(sql, input.UserID, input.FriendID, input.UserID, input.FriendID).Scan(&friend.Id, &friend.UserId, &friend.AddedBy)
 	if err != nil {
 		return friend, fmt.Errorf("select by user : %s", err.Error())
