@@ -55,6 +55,7 @@ func (c Post) Create(ctx *fiber.Ctx) (int, string, interface{}, interface{}, err
 
 func (c Post) List(ctx *fiber.Ctx) (int, string, interface{}, interface{}, error) {
 
+	// TODO : indexing for this params
 	input := collections.PostInputParam{
 		UserID: library.GetUserID(ctx),
 		Tags:   []string{},

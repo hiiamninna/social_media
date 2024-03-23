@@ -24,6 +24,7 @@ func NewFriendController(repo repository.Repository) Friend {
 func (c Friend) List(ctx *fiber.Ctx) (int, string, interface{}, interface{}, error) {
 
 	// set default value first
+	// TODO : analize for indexing params
 	input := collections.FriendInputParam{
 		UserID:        library.GetUserID(ctx),
 		Search:        "",
