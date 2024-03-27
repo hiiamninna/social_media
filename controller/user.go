@@ -27,6 +27,7 @@ func NewUserController(repo repository.Repository, jwt library.JWT, bcryptSalt i
 	}
 }
 
+// TODO : analize more, so many error on this
 func (c User) Register(ctx *fiber.Ctx) (int, string, interface{}, interface{}, error) {
 
 	raw := ctx.Request().Body()
@@ -100,6 +101,7 @@ func (c User) Register(ctx *fiber.Ctx) (int, string, interface{}, interface{}, e
 	}
 }
 
+// TODO : analize more, so many error on this
 func (c User) Login(ctx *fiber.Ctx) (int, string, interface{}, interface{}, error) {
 	raw := ctx.Request().Body()
 	input := collections.UserLoginInput{}

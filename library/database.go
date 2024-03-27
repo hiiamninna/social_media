@@ -3,6 +3,7 @@ package library
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -27,6 +28,11 @@ func NewDatabaseConnection(dbCfg Database) (*sql.DB, error) {
 	if err != nil {
 		return db, fmt.Errorf("db ping : %w", err)
 	}
+
+	db.SetConnMaxIdleTime(time.Minute * 5)
+	db.SetConnMaxLifetime(time.Minute * 30)
+	db.SetMaxIdleConns(50)
+	db.SetMaxOpenConns(100)
 
 	return db, nil
 }
