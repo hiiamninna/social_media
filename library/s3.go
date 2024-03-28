@@ -24,7 +24,7 @@ type S3 struct {
 
 func NewS3(config S3Config) (S3, error) {
 	session, err := session.NewSession(&aws.Config{
-		Region:      aws.String("ap-southeast-1"),
+		Region:      aws.String(config.Region),
 		Credentials: credentials.NewStaticCredentials(config.ID, config.SecretKey, ""),
 	})
 	if err != nil {

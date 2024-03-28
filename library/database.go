@@ -9,13 +9,16 @@ import (
 )
 
 type Database struct {
-	Env      string
-	Name     string
-	Host     string
-	Port     string
-	Username string
-	Password string
-	Params   string
+	Name         string
+	Host         string
+	Port         string
+	Username     string
+	Password     string
+	Params       string
+	MaxIdleTime  time.Duration
+	MaxLifeTime  time.Duration
+	MaxIdleConns int
+	MaxOpenConns int
 }
 
 func NewDatabaseConnection(dbCfg Database) (*sql.DB, error) {
@@ -29,10 +32,10 @@ func NewDatabaseConnection(dbCfg Database) (*sql.DB, error) {
 		return db, fmt.Errorf("db ping : %w", err)
 	}
 
-	db.SetConnMaxIdleTime(time.Minute * 5)
-	db.SetConnMaxLifetime(time.Minute * 30)
-	db.SetMaxIdleConns(50)
-	db.SetMaxOpenConns(100)
+	db.SetConnMaxIdleTime(time.Minute * dbCfg.MaxIdleTime)
+	db.SetConnMaxLifetime(time.Minute * dbCfg.MaxLifeTime)
+	db.SetMaxIdleConns(dbCfg.MaxIdleConns)
+	db.SetMaxOpenConns(dbCfg.MaxOpenConns)
 
 	return db, nil
 }
