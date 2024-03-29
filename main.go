@@ -11,15 +11,8 @@ import (
 const TIME_FORMAT = "2006-01-02 15:01:02 "
 
 func main() {
+	app := config.AppRoute()
 
-	context, err := config.NewContext()
-	if err != nil {
-		fmt.Println(time.Now().Format(TIME_FORMAT), "new context : "+err.Error())
-	}
-
-	app := config.AppRoute(context)
-
-	//set channel to notify when app interrupted
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {

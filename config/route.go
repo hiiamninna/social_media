@@ -15,7 +15,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func AppRoute(context Context) *fiber.App {
+func AppRoute() *fiber.App {
+
+	context, err := NewContext()
+	if err != nil {
+		fmt.Println(time.Now().Format(TIME_FORMAT), "new context : "+err.Error())
+	}
 	// set route
 	app := fiber.New(fiber.Config{})
 
@@ -50,6 +55,23 @@ func AppRoute(context Context) *fiber.App {
 	return app
 }
 
+// PROMETHEUS n GRAFANA
+var (
+	RequestHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "http_request",
+		Help:    "Histogram of the http request duration.",
+		Buckets: prometheus.LinearBuckets(1, 1, 10), // Adjust bucket sizes as needed
+	}, []string{"path", "method", "status"})
+)
+
+func NewRoute(app *fiber.App, ctx Context, path string, method string, useAuth bool, handler func(*fiber.Ctx) (int, string, interface{}, interface{}, error)) {
+	if useAuth {
+		app.Add(method, path, ctx.JWT.Authentication(), parseContextWithMatrics(path, method, handler))
+	} else {
+		app.Add(method, path, parseContextWithMatrics(path, method, handler))
+	}
+}
+
 func Response(message string, meta interface{}, data interface{}) []byte {
 
 	response := struct {
@@ -68,23 +90,6 @@ func Response(message string, meta interface{}, data interface{}) []byte {
 	}
 
 	return value
-}
-
-// PROMETHEUS n GRAFANA
-var (
-	RequestHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "http_request",
-		Help:    "Histogram of the http request duration.",
-		Buckets: prometheus.LinearBuckets(1, 1, 10), // Adjust bucket sizes as needed
-	}, []string{"path", "method", "status"})
-)
-
-func NewRoute(app *fiber.App, ctx Context, path string, method string, useAuth bool, handler func(*fiber.Ctx) (int, string, interface{}, interface{}, error)) {
-	if useAuth {
-		app.Add(method, path, ctx.JWT.Authentication(), parseContextWithMatrics(path, method, handler))
-	} else {
-		app.Add(method, path, parseContextWithMatrics(path, method, handler))
-	}
 }
 
 func parseContextWithMatrics(path string, method string, f func(*fiber.Ctx) (int, string, interface{}, interface{}, error)) fiber.Handler {
